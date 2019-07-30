@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 import matplotlib.patches as mpatches
+import csv
 #from matplotlib.widgets import TextBox
 #from matplotlib.widgets import Button
 import os
@@ -89,58 +90,95 @@ def rawDatPrep(m, scanInd, wavenumber):
   mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a)
   print("TEST5:\n", mfouter.loc[:49,"timestamp":wavenumberToUse])
   mfouter = mfouter[pd.notna(mfouter['bunch_no'])]
+  mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]
   print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse,'betaVals','dopplerShiftFactor']])
-
-
-
   tStamps = np.array(mfouter.loc[:,'timestamp'])
   mfouter.loc[0:,'timeDiffs'] = pd.Series(np.append(0,tStamps[1:]-tStamps[:-1]), index=mfouter.index[0:])
   if scanDataDic['has_iscool'] == True:
     mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*mfouter.loc[:, 'dopplerShiftFactor']
-  else: 
-    mfouter.loc[:,'wavenumber'] = mfouter.loc[:,'wavenumber'] #should I just apply a naive correction factor anyway?
-    print("YO... No iscool data. How am I supposed to correct these wavenumber measurements?!?")
   #print(mfouterBf.loc[:49,["timestamp","timeDiffs","bunch_no","events_per_bunch","wavenumber_2"]])
+  else:
+    print("YO... No iscool data. How am I supposed to correct these wavenumber measurements?!?")
+    nextScan=scanInd
+    conditionMet = False
+    while conditionMet == False:
+      nextScan+=1
+      try:
+        nextDirList = os.listdir('../RaF_RawData/'+str(mass)+'/scan_'+str(nextScan)+"/")
+        if 'metadata_iscool_ds.txt' in nextDirList:
+          #nextIsCool = open('../RaF_RawData/'+str(mass)+'/scan_'+str(nextScan)+'/iscool_ds.csv','r')
+          #with open('../RaF_RawData/'+str(mass)+'/scan_'+str(nextScan)+'/iscool_ds.csv', newline='') as f:
+          #  reader = csv.reader(f)
+          #  row1 = next(reader)
+          isCoolVoltage = np.loadtxt('../RaF_RawData/'+str(mass)+'/scan_'+str(nextScan)+'/iscool_ds.csv',delimiter=';',max_rows=1)[-1]
+          print("Using Scan %d initial isCool reading; Voltage=%d"%(nextScan, isCoolVoltage))
+          #nextIsCool.close()
+          dcf = dopplerCorrectionFactor(m, isCoolVoltage)
+          print("dcf=%d"%dcf)
+          mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*dcf
+          break
+      except OSError:
+        conditionMet = False
+  preppedDataFrame = mfouter.loc[:,["timestamp", 'timeDiffs', 'wavenumber', 'events_per_bunch']].copy()
+  del(mfouter)
 
-  return(mfouter)#TODO
+  return(preppedDataFrame)#TODO add in other wavenumber correction thing
 
 def makeUseable(df, nBins=100):
   wavenumberToUse = "wavenumber"
-  kBins = pd.cut(df.loc[:,wavenumberToUse], bins=nBins)
+  kBins = pd.cut(df.loc[:,wavenumberToUse], bins=nBins)#, retbins=True)
 
-  print("test8.\n", df.groupby(kBins) )
+  #print("test8.\n", df.groupby(kBins) )
+  print("test8.\n", kBins )
 
   aggDat = df.groupby(kBins).agg({wavenumberToUse:['mean', 'min', 'max'], 'events_per_bunch':['sum'], 'timeDiffs':['sum']}).reset_index() #Wtf apparently reset_index() is p important... 
 
-  outputDF = pd.DataFrame({"wavenumber_mean"   : aggDat.loc[:,(wavenumberToUse,'mean')],
+  """outputDF = pd.DataFrame({"wavenumber_mean"   : aggDat.loc[:,(wavenumberToUse,'mean')],
                         "signal_value"         : aggDat.loc[:,('events_per_bunch','sum')]/aggDat.loc[:,('timeDiffs','sum')],
                         "signal_uncertainty"   : np.sqrt(aggDat.loc[:,('events_per_bunch','sum')])/aggDat.loc[:,('timeDiffs','sum')],
                         "measurement_duration" : aggDat.loc[:,('timeDiffs','sum')], 
                         "wavenumber_lowerUncert"     : aggDat.loc[:,(wavenumberToUse,'mean')]-aggDat.loc[:,(wavenumberToUse,'min')],
-                        "wavenumber_upperUncert"     : aggDat.loc[:,(wavenumberToUse,'max')]-aggDat.loc[:,(wavenumberToUse,'mean')]},index=range(len(kBins) ) )
+                        "wavenumber_upperUncert"     : aggDat.loc[:,(wavenumberToUse,'max')]-aggDat.loc[:,(wavenumberToUse,'mean')]},index=range(len(kBins) ) )"""
+  outputDF = pd.DataFrame({"wavenumber_mean"   : aggDat.loc[:,(wavenumberToUse,'mean')],
+                        "signal_value"         : aggDat.loc[:,('events_per_bunch','sum')]/aggDat.loc[:,('timeDiffs','sum')],
+                        "signal_uncertainty"   : np.sqrt(aggDat.loc[:,('events_per_bunch','sum')])/aggDat.loc[:,('timeDiffs','sum')],
+                        "measurement_duration" : aggDat.loc[:,('timeDiffs','sum')]},index=range(len(kBins) ) )
   return(outputDF)
 
+def plotData(output, m, scanInd, wavenumber, nBins=-1):
+  plt.figure("output Plot, mass: %d scan: %d wavenumber: %d numBins: %d"%(m, scanInd, wavenumber, nBins) )
+  plt.errorbar(x=output.loc[:,'wavenumber_mean'], y=output.loc[:,'signal_value'], yerr=output.loc[:,'signal_uncertainty'], fmt="b-",ecolor='k')#, xerr = kBins)
+  plt.title("Mass: %d ; scan: %d wavemeter_%d\ncount rate vs wavenumber for %d wavenumber bins"%(m, scanInd, wavenumber, nBins))
+  plt.xlabel(r'wavenumber ($cm^{-1}$)')
+  plt.ylabel('rate (counts/s?) TODO: determine unit on timestamp')
 
+def doEverything(m, scanInd, wavenumber, nBins=100):
+  mfba =  rawDatPrep(m, scanInd, wavenumber)
+  output = makeUseable(mfba, nBins=nBins)
+  plotData(output, m, scanInd, wavenumber, nBins=nBins)
 
 if __name__ == '__main__':
 
   mass = 245
-  scanIndex = 2347
+  scanIndex = 2133
   wmNum = 2
   numBins = 500
 
   mfba =  rawDatPrep(mass, scanIndex, wmNum)
+  print("test 9:\n", mfba.head)
+  print("test 10:\n", mfba.tail())
   output = makeUseable(mfba, nBins=numBins)
 
-  print("test11:\n", output.loc[25:50,['wavenumber_mean','signal_value', 'signal_uncertainty']])
-  print("test11:\n", output.loc[25:50,['wavenumber_lowerUncert','wavenumber_upperUncert']])
+  #print("test11:\n", output.loc[25:50,['wavenumber_mean','signal_value', 'signal_uncertainty']])
+  print("test11:\n", output.iloc[-50:-1,:])
+  #print("test11:\n", output.loc[25:50,['wavenumber_lowerUncert','wavenumber_upperUncert']])
 
-  plt.figure("outputDF Plot")
+  """plt.figure("outputDF Plot")
   plt.errorbar(x=output.loc[:,'wavenumber_mean'], y=output.loc[:,'signal_value'], yerr=output.loc[:,'signal_uncertainty'], fmt="b-",ecolor='k')#, xerr = kBins)
   plt.title("Mass: %d ; scan: %d wavemeter_%d\ncount rate vs wavenumber for %d wavenumber bins"%(mass, scanIndex, wmNum, numBins))
   plt.xlabel(r'wavenumber ($cm^{-1}$)')
-  plt.ylabel('rate (counts/s?) TODO: determine unit on timestamp')
-
+  plt.ylabel('rate (counts/s?) TODO: determine unit on timestamp')"""
+  plotData(output, mass, scanIndex, wmNum, nBins=numBins)
   plt.show()
 
 """ wavenumberToUse = "wavenumber_"+str(wmNum)
