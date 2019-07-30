@@ -12,30 +12,27 @@ import os
 1. Incorporate iscool voltages to correct for doppler shift variation
 2. Figure out what to do with wavemeter_pdl?
 3. How to know which wavemeter to use???
-4. turn all of this messy script into nice clean functions that I can import as a module
 """
-def cleanDataSet(dRay):
-  """crops data in v-space to remove sparse, pure-noise portions of scans"""
-  meanSpacing = np.mean(dRay[1:,2]-dRay[:-1,2])
-  i = 0
-  while (dRay[i+1,2]-dRay[i,2]>3*meanSpacing) or (dRay[i+2,2]-dRay[i+1,2]>3*meanSpacing) or (dRay[i+3,2]-dRay[i+2,2]>3*meanSpacing):
-  # If the any of the next 3 v-spacings are greater than 3 times the average spacing, increment the index at which to start cropping.
-    i+=1
-  len1 = len(dRay[:,2])
-  len2 = len(dRay[i:,2])
-  #print("test5: len1 = %d, len2 = %d"%(len1,len2))
-  return dRay[i:,:]
 
-#def loadRawDataset(directory, scanID):
-  #TODO
-#dataDir = os.listdir('RaF_RawData')
+def computeBeta(m, voltage):
+  #computes bunch velocity from isotope mass and iscool voltage T = m/2 v^2 ==> v = sqrt(2*T/m)
+  amu2eV = 931494102 #1 amu(*c^2) ~= 931494273 eV
+  beta = math.sqrt(2*voltage/(m*amu2eV))
+  return(beta)
 
-#cwd = os.getcwd()
+def dopplerCorrectionFactor(m, voltage):
+  #uses isotope mass and iscool voltage to compute doppler correction factor for wavenumber measurements
+  amu2eV = 931494102 #1 amu(*c^2) ~= 931494273 eV
+  beta = math.sqrt(2*voltage/(m*amu2eV))
+  gamma = 1/math.sqrt(1-beta**2)
+  dcf = gamma*(1+beta)
+  return(dcf)
 
 def getScanDir(m, scanInd):
   return('../RaF_RawData/'+str(m)+'/scan_'+str(scanInd)) #Okay so maybe this didn't need to be a function...
 
 def rawDatPrep(m, scanInd, wavenumber):
+  #TODO: function description
   mass = m
   scanIndex = scanInd
   wmNum = wavenumber
@@ -50,6 +47,9 @@ def rawDatPrep(m, scanInd, wavenumber):
     if dirlist[i]=='metadata_iscool_ds.txt':
       iscool_colNames = ['timestamp', 'offset', 'voltage']
       ic = pd.read_csv(scanDir + "iscool_ds.csv", sep=';', names=iscool_colNames)
+      #betaFunc = np.vectorize(computeBeta, excluded=['m'])
+      ic['betaVals'] = ic['voltage'].map(lambda V: computeBeta(m, V))
+      ic['dopplerShiftFactor'] = ic['voltage'].map(lambda V: dopplerCorrectionFactor(m, V))
       scanDataDic['iscool'] = ic
       scanDataDic['has_iscool'] = True
 
@@ -67,31 +67,45 @@ def rawDatPrep(m, scanInd, wavenumber):
       scanDataDic['has_wavemeter'] = True
 
     elif dirlist[i] == 'metadata_wavemeter_ds.txt':
-      pdl_colNames = ['timestamp', 'offset', 'wavenumber_1']
+      pdl_colNames = ['timestamp', 'offset', 'wavenumber_pdl']
       pdl = pd.read_csv(scanDir + "wavemeter_pdl_ds.csv", sep=';', names=pdl_colNames)
       scanDataDic['wavemeter_pdl'] = pdl
       scanDataDic['has_wavemeter_pdl'] = True
 
-  
+  mfouter = pd.merge_ordered(tag, wm, on='timestamp', how='outer')# every scan _should_ have tagger and wavemeter data (or else what's the point?)
+  if scanDataDic['has_iscool'] == True:
+    mfouter = pd.merge_ordered(mfouter, ic, on='timestamp', how='outer')
+  if scanDataDic['has_wavemeter_pdl'] == True:
+    mfouter = pd.merge_ordered(mfouter, pdl, on='timestamp', how='outer')
   #mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill',inplace=True) #".loc indexed to a list of columns won't support inplace operations"...
-  mfouter = pd.merge_ordered(tag, wm, on='timestamp', how='outer')
-  mfouter.loc[:,"wavenumber_1":"wavenumber_4"] = mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill')#this is also good?
+  mfouter.loc[:,"wavenumber_1":"wavenumber_4"] = mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill')
+  if scanDataDic['has_iscool'] == True:
+       mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']] = mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']].fillna(method='backfill')
+  if scanDataDic['has_wavemeter_pdl'] == True:
+       mfouter.loc[:,'wavenumber_pdl'] = mfouter.loc[:,'wavenumber_pdl'].fillna(method='backfill')
 
-  print("TEST2:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch", wavenumberToUse]])
+  print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
 
   mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a)
   print("TEST5:\n", mfouter.loc[:49,"timestamp":wavenumberToUse])
   mfouter = mfouter[pd.notna(mfouter['bunch_no'])]
-  print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse]])
+  print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse,'betaVals','dopplerShiftFactor']])
+
+
 
   tStamps = np.array(mfouter.loc[:,'timestamp'])
   mfouter.loc[0:,'timeDiffs'] = pd.Series(np.append(0,tStamps[1:]-tStamps[:-1]), index=mfouter.index[0:])
+  if scanDataDic['has_iscool'] == True:
+    mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*mfouter.loc[:, 'dopplerShiftFactor']
+  else: 
+    mfouter.loc[:,'wavenumber'] = mfouter.loc[:,'wavenumber'] #should I just apply a naive correction factor anyway?
+    print("YO... No iscool data. How am I supposed to correct these wavenumber measurements?!?")
   #print(mfouterBf.loc[:49,["timestamp","timeDiffs","bunch_no","events_per_bunch","wavenumber_2"]])
 
   return(mfouter)#TODO
 
-def makeUseable(df, wmNum, nBins=100):
-  wavenumberToUse = "wavenumber_"+str(wmNum)
+def makeUseable(df, nBins=100):
+  wavenumberToUse = "wavenumber"
   kBins = pd.cut(df.loc[:,wavenumberToUse], bins=nBins)
 
   print("test8.\n", df.groupby(kBins) )
@@ -116,7 +130,7 @@ if __name__ == '__main__':
   numBins = 500
 
   mfba =  rawDatPrep(mass, scanIndex, wmNum)
-  output = makeUseable(mfba, wmNum, nBins=numBins)
+  output = makeUseable(mfba, nBins=numBins)
 
   print("test11:\n", output.loc[25:50,['wavenumber_mean','signal_value', 'signal_uncertainty']])
   print("test11:\n", output.loc[25:50,['wavenumber_lowerUncert','wavenumber_upperUncert']])
