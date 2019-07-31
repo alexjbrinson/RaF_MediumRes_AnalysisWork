@@ -14,6 +14,13 @@ import os
 2. How to know which wavemeter to use???
 """
 
+"""
+wavemeter_1 = injection seeded (at least for scans 2170-2176...)
+wavemeter_2 = 
+wavemeter_3 = 
+wavemeter_4 = 
+"""
+
 def computeBeta(m, voltage):
   #computes bunch velocity from isotope mass and iscool voltage T = m/2 v^2 ==> v = sqrt(2*T/m)
   amu2eV = 931494102 #1 amu(*c^2) ~= 931494273 eV
@@ -27,9 +34,6 @@ def dopplerCorrectionFactor(m, voltage):
   gamma = 1/math.sqrt(1-beta**2)
   dcf = gamma*(1+beta)
   return(dcf)
-
-def getScanDir(m, scanInd):
-  return('../RaF_RawData/'+str(m)+'/scan_'+str(scanInd)) #Okay so maybe this didn't need to be a function...
 
 def wavemeterDataCleaner(df, wavenumberToUse):
   #Removes garbage wavemeter data
@@ -152,6 +156,7 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
 def makeUseable(df, nBins=100, resolution=-1):
   
   kVals = np.array(df.loc[:,"wavenumber"]); kRange=max(kVals)-min(kVals)
+  print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
   if resolution<0: binQuant = nBins
   else: binQuant = math.ceil(kRange/resolution)
   print("TESTSTSSTSTS: numBins=%d"%binQuant)
@@ -176,11 +181,11 @@ def makeUseable(df, nBins=100, resolution=-1):
 
 def plotData(output, m, scanInd, wavenumber, nBins=-1, resolution=-1):
   if resolution ==-1:
-    plt.figure("output Plot, mass: %d scan: %d wavenumber: %d numBins: %d"%(m, scanInd, wavenumber, len(output.loc[:,'wavenumber_mean'])) )
-    plt.title('Mass: %d ; scan: %d wavemeter_%d\ncount rate vs wavenumber for %d wavenumber bins'%(m, scanInd, wavenumber, len(output.loc[:,'wavenumber_mean'])))
+    plt.figure("output Plot, mass: %d scan: "%m +str(scanInd)+ " wavenumber: %d numBins: %d"%(wavenumber, len(output.loc[:,'wavenumber_mean'])) )
+    plt.title('Mass: %d ; scan: '%m +str(scanInd)+ ' wavemeter_%d\ncount rate vs wavenumber for %d wavenumber bins'%(wavenumber, len(output.loc[:,'wavenumber_mean'])))
   else:
-    plt.figure(r'output Plot, mass: %d scan: %d wavenumber: %d resolution: %.3f '%(m, scanInd, wavenumber, resolution) )
-    plt.title(r'Mass: %d ; scan: %d wavemeter_%d\ncount rate vs wavenumber at %d $cm^{-1}$ resolution'%(m, scanInd, wavenumber, resolution))
+    plt.figure('output Plot, mass: %d scan: '%m +str(scanInd)+ ' wavenumber: %d resolution: %.3f '%(wavenumber, resolution) )
+    plt.title(r'Mass: %d ; scan: '%m +str(scanInd)+ ' wavemeter_%d\ncount rate vs wavenumber at %.3f $cm^{-1}$ resolution'%(wavenumber, resolution))
   plt.errorbar(x=output.loc[:,'wavenumber_mean'], y=output.loc[:,'signal_value'], yerr=output.loc[:,'signal_uncertainty'], fmt="bo",ecolor='k')#, xerr = kBins)
   plt.xlabel(r'wavenumber ($cm^{-1}$)')
   plt.ylabel('rate (counts/s?) TODO: determine unit on timestamp')
@@ -192,8 +197,9 @@ def doEverything(m, scanInd, wavenumber, nBins=100):
 
 if __name__ == '__main__':
 
+  
   mass = 245
-  scanIndex = 2236
+  scanIndex = 2310
   wmNum = 2
   numBins = 500
 
@@ -203,28 +209,33 @@ if __name__ == '__main__':
   output = makeUseable(mfba, nBins=numBins)
   print("test11:\n", output)
   plotData(output, mass, scanIndex, wmNum, nBins=numBins)
-
-  #print("test11:\n", output.loc[25:50,['wavenumber_mean','signal_value', 'signal_uncertainty']])
-  #print("test11:\n", output.iloc[-50:-1,:])
-  
-  #print("test11:\n", output.loc[25:50,['wavenumber_lowerUncert','wavenumber_upperUncert']])
-
-  """plt.figure("outputDF Plot")
-  plt.errorbar(x=output.loc[:,'wavenumber_mean'], y=output.loc[:,'signal_value'], yerr=output.loc[:,'signal_uncertainty'], fmt="b-",ecolor='k')#, xerr = kBins)
-  plt.title("Mass: %d ; scan: %d wavemeter_%d\ncount rate vs wavenumber for %d wavenumber bins"%(mass, scanIndex, wmNum, numBins))
-  plt.xlabel(r'wavenumber ($cm^{-1}$)')
-  plt.ylabel('rate (counts/s?) TODO: determine unit on timestamp')"""
-  
-  
+    
   #New merging thing?
+  mass = 245
+  indices=[2170,2171,2172,2173,2175,2176]
+  wmNum = 1
+  res=.01
+
   dfs=[]
-  indices=[2170,2171,2172,2175,2176,2177]
   for ind in indices:
     dfs.append(rawDatPrep(mass,ind,wmNum))
   df=pd.concat(dfs)
   print("test whatever:\n", df)
-  audi=makeUseable(df, resolution=.01)
+  audi=makeUseable(df, resolution=res)
   print("test whatever+1:\n", audi)
-  plotData(audi, mass, -1, wmNum, resolution=.01)
+  plotData(audi, mass, indices, wmNum, resolution=res)
+  """m2=243
+  indices=[2300,2302,2303,2283]
+  wmNum = 2
+  res=.1
+
+  dfs=[]
+  for ind in indices:
+    dfs.append(rawDatPrep(m2,ind,wmNum))
+  df=pd.concat(dfs)
+  print("test whatever:\n", df)
+  audi=makeUseable(df, resolution=res)
+  print("test whatever+1:\n", audi)
+  plotData(audi, m2, indices, wmNum, resolution=res)"""
 
   plt.show()
