@@ -10,15 +10,17 @@ import os
 #import os.path
 
 """TODO: A lotta stuff...
-1. Figure out what to do with wavemeter_pdl?
-2. How to know which wavemeter to use???
+1. How to know which wavemeter to use??? (In Progress!)
+2. Wavemeter correction for high res scans
+3. Then what?
 """
 
 """
 wavemeter_1 = injection seeded (at least for scans 2170-2176...)
-wavemeter_2 = 
+wavemeter_2 = Grating Ti:Sa
 wavemeter_3 = 
 wavemeter_4 = 
+wavemeter_pdl = COBRA
 """
 
 def computeBeta(m, voltage):
@@ -93,7 +95,7 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
       scanDataDic['wavemeter'] = wm
       scanDataDic['has_wavemeter'] = True  
 
-    elif dirlist[i] == 'metadata_wavemeter_ds.txt':
+    elif dirlist[i] == 'metadata_wavemeter_pdl_ds.txt':
       pdl_colNames = ['timestamp', 'offset', 'wavenumber_pdl']
       pdl = pd.read_csv(scanDir + "wavemeter_pdl_ds.csv", sep=';', names=pdl_colNames)
       scanDataDic['wavemeter_pdl'] = pdl
@@ -181,25 +183,33 @@ def makeUseable(df, nBins=100, resolution=-1):
 
 def plotData(output, m, scanInd, wavenumber, nBins=-1, resolution=-1):
   if resolution ==-1:
-    plt.figure("output Plot, mass: %d scan: "%m +str(scanInd)+ " wavenumber: %d numBins: %d"%(wavenumber, len(output.loc[:,'wavenumber_mean'])) )
-    plt.title('Mass: %d ; scan: '%m +str(scanInd)+ ' wavemeter_%d\ncount rate vs wavenumber for %d wavenumber bins'%(wavenumber, len(output.loc[:,'wavenumber_mean'])))
+    plt.figure("output Plot, mass: %d scan: "%m +str(scanInd)+ " wavenumber: " +str(wavenumber)+ " numBins: %d"%len(output.loc[:,'wavenumber_mean']) )
+    plt.title('Mass: %d ; scan: '%m +str(scanInd)+ ' wavemeter_' + str(wavenumber)+ '\ncount rate vs wavenumber for %d wavenumber bins'% len(output.loc[:,'wavenumber_mean']))
   else:
-    plt.figure('output Plot, mass: %d scan: '%m +str(scanInd)+ ' wavenumber: %d resolution: %.3f '%(wavenumber, resolution) )
-    plt.title(r'Mass: %d ; scan: '%m +str(scanInd)+ ' wavemeter_%d\ncount rate vs wavenumber at %.3f $cm^{-1}$ resolution'%(wavenumber, resolution))
-  plt.errorbar(x=output.loc[:,'wavenumber_mean'], y=output.loc[:,'signal_value'], yerr=output.loc[:,'signal_uncertainty'], fmt="bo",ecolor='k')#, xerr = kBins)
+    plt.figure('output Plot, mass: %d scan: '%m +str(scanInd)+ ' wavenumber:' +str(wavenumber)+  'resolution: %.3f '%resolution )
+    plt.title(r'Mass: %d ; scan: '%m +str(scanInd)+ ' wavemeter_' +str(wavenumber)+ '\ncount rate vs wavenumber at %.3f $cm^{-1}$ resolution'%resolution)
+  plt.errorbar(x=output.loc[:,'wavenumber_mean'], y=output.loc[:,'signal_value'], yerr=output.loc[:,'signal_uncertainty'], fmt="go",ecolor='k')#, xerr = kBins)
   plt.xlabel(r'wavenumber ($cm^{-1}$)')
-  plt.ylabel('rate (counts/s?) TODO: determine unit on timestamp')
+  plt.ylabel('rate (counts/s)') #TODO: determine unit on timestamp
 
-def doEverything(m, scanInd, wavenumber, nBins=100):
+def fileWriter(output, m, scanInd):
+  if not os.path.exists('./FrequencyConvertedDatasets/%d'%m):
+    os.mkdir('./FrequencyConvertedDatasets/%d'%m)
+  output.to_csv(path_or_buf='./FrequencyConvertedDatasets/%d/scan_%d.csv'%(m, scanInd), sep=',', float_format='%.11f', columns=['signal_uncertainty','wavenumber_mean','signal_value'], index=True, header=['error','freq','rate'])
+
+def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=False, makePlot=False):
   mfba =  rawDatPrep(m, scanInd, wavenumber)
-  output = makeUseable(mfba, nBins=nBins)
-  plotData(output, m, scanInd, wavenumber, nBins=nBins)
+  if resolution==-1: output = makeUseable(mfba, nBins=nBins)
+  else: output = makeUseable(mfba, resolution=resolution)
+  if writeToFile: fileWriter(output, m, scanInd)
+  if makePlot: plotData(output, m, scanInd, wavenumber, nBins=nBins)
+  return(output)
 
 if __name__ == '__main__':
 
   
   mass = 245
-  scanIndex = 2310
+  scanIndex = 2319
   wmNum = 2
   numBins = 500
 
@@ -209,8 +219,13 @@ if __name__ == '__main__':
   output = makeUseable(mfba, nBins=numBins)
   print("test11:\n", output)
   plotData(output, mass, scanIndex, wmNum, nBins=numBins)
+
+  for w in [1,2,3,4,'pdl']:
+    doEverything(242, 2314, w)
+
     
   #New merging thing?
+  """
   mass = 245
   indices=[2170,2171,2172,2173,2175,2176]
   wmNum = 1
@@ -223,8 +238,9 @@ if __name__ == '__main__':
   print("test whatever:\n", df)
   audi=makeUseable(df, resolution=res)
   print("test whatever+1:\n", audi)
-  plotData(audi, mass, indices, wmNum, resolution=res)
-  """m2=243
+  plotData(audi, mass, indices, wmNum, resolution=res)"""
+
+  """m2=243 #Looking at diff isotope
   indices=[2300,2302,2303,2283]
   wmNum = 2
   res=.1
