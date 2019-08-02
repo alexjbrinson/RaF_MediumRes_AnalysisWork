@@ -33,7 +33,8 @@ for i in range(len(scanInds245OLD)):
       mask = datArray[:,2]>0
       datArray = np.array(datArray[[mask==True]])
       print("Scan "+str(scanInds245OLD[i])+" contained negative wavenumbers...", str(len(mask)-len(datArray[:,2])) + " data point(s) have been removed. Updated array shape =", datArray.shape)
-    datDic[scanInds245OLD[i]] = fcuk.cleanDataSet(datArray)
+    datDic[scanInds245OLD[i]] = datArray
+    #datDic[scanInds245OLD[i]] = fcuk.cleanDataSet(datArray)
     """if scanInds245OLD[i]==2137:
       print("All of the signal in Scan 2137 occurs in the first 6th of the dataset. Will crop the rest so it doesn't dominate the fits.")
       datArray=datDic[2137]
@@ -92,16 +93,16 @@ def dataFileComparator(scanInd):
   else: wavemeter = 'fsdaasdfads'
   binCount = len(oldLowResDatArray[:,2])
   needWrite = not os.path.exists('./FrequencyConvertedDatasets/245/scan_%d'%scanInd)
-  newDataFrame = lmd.doEverything(245, scanInd, waveMeter, nBins=binCount, writeToFile=needWrite, makePlot=False, cleanWM=True, verbose=True)
+  newDataFrame = lmd.doEverything(245, scanInd, waveMeter, nBins=binCount, writeToFile=needWrite, makePlot=False, cleanWM=True, verbose=False)
   plt.figure("output Plot, mass: %d scan: "%245 +str(scanInd)+ " wavenumber: " +str(waveMeter)+ " numBins: %d"%binCount)
   plt.gcf().set_size_inches(20, 12)
   plt.errorbar(oldLowResDatArray[:,2], oldLowResDatArray[:,3], yerr = oldLowResDatArray[:,1], fmt='bo-', ecolor='k', alpha=.3, label='oldLowResDatArray')
   plt.fill_between(oldLowResDatArray[:,2], oldLowResDatArray[:,3],color='blue', alpha=.3)
   plt.errorbar(x=newDataFrame.loc[:,'wavenumber_mean'], y=newDataFrame.loc[:,'signal_value'], yerr=newDataFrame.loc[:,'signal_uncertainty'], fmt="ro-", ecolor='k', label='newDataFrame', markersize=3)
-  plt.title('Mass: %d ; scan: '%245 +str(scanInd)+ ' wavemeter_' + str(waveMeter)+ '\ncount rate vs wavenumber for %d wavenumber bins'% len(newDataFrame.loc[:,'wavenumber_mean']), fontsize=18)
-  plt.xlabel(r'wavenumber ($cm^{-1}$)', fontsize=16)
-  plt.ylabel('rate (counts/s)', fontsize=16)
-  plt.legend(loc=2, fontsize=16)
+  plt.title('Mass: %d ; scan: '%245 +str(scanInd)+ ' wavemeter_' + str(waveMeter)+ '\ncount rate vs wavenumber for %d wavenumber bins'% len(newDataFrame.loc[:,'wavenumber_mean']), fontsize=24)
+  plt.xlabel(r'wavenumber ($cm^{-1}$)', fontsize=18)
+  plt.ylabel('rate (counts/s)', fontsize=18)
+  plt.legend(loc=2, fontsize=18)
   if not os.path.exists('./FrequencyConvertedDatasets/245ComparatorPlots/'):
     os.mkdir('./FrequencyConvertedDatasets/245ComparatorPlots/')
   plt.savefig('./FrequencyConvertedDatasets/245ComparatorPlots/scan_%dComparisonPlot.png'%scanInd)
