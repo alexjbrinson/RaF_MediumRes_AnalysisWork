@@ -78,48 +78,70 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
       #betaFunc = np.vectorize(computeBeta, excluded=['m'])
       ic['betaVals'] = ic['voltage'].map(lambda V: computeBeta(m, V))
       ic['dopplerShiftFactor'] = ic['voltage'].map(lambda V: dopplerCorrectionFactor(m, V))
-      scanDataDic['iscool'] = ic
-      scanDataDic['has_iscool'] = True
+      if notDumb: ic[['voltage','betaVals','dopplerShiftFactor']] = ic[['voltage','betaVals','dopplerShiftFactor']].apply(pd.to_numeric,downcast='float')
+      #scanDataDic['iscool'] = ic
+      scanDataDic['has_iscool'] = True #I want to call this bool ['is_cool'], but I guess I'll be informative instead :(
 
     elif dirlist[i] == 'metadata_tagger_ds.txt':
       #tagger_mdFile = open()
       tag_colNames = ['timestamp', 'offset', 'bunch_no', 'events_per_bunch', 'channel', 'delta_t']
-      tag = pd.read_csv(scanDir + "tagger_ds.csv", sep=';', names=tag_colNames)
-      scanDataDic['tagger'] = tag
-      scanDataDic['has_tagger'] = True #I want to call this bool ['is_cool'], but I guess I'll be informative instead :(
+      if notDumb: tag = pd.read_csv(scanDir + "tagger_ds.csv", sep=';', names=tag_colNames, dtype={'bunch_no':'Int32', 'events_per_bunch':'Int32'})
+      else: tag = pd.read_csv(scanDir + "tagger_ds.csv", sep=';', names=tag_colNames)
+      #tag['bunch_no'].apply()
+      #tag['events_per_bunch'].apply()
+      if notDumb: tag[['bunch_no','events_per_bunch']]=tag[['bunch_no','events_per_bunch']].apply(pd.to_numeric, downcast='unsigned')
+      #tag[['bunch_no','events_per_bunch']].astype( downcast='unsigned')
+      #tag["events_per_bunch"]=tag["events_per_bunch"].map(lambda a: int(1) if a > 0 else int(a))
+      #scanDataDic['tagger'] = tag
+      scanDataDic['has_tagger'] = True 
 
     elif dirlist[i] == 'metadata_wavemeter_ds.txt':
       wm_colNames = ['timestamp', 'offset', 'wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']
       wm = pd.read_csv(scanDir + "wavemeter_ds.csv", sep=';', names=wm_colNames)
       if cleanWM == True : wm = wavemeterDataCleaner(wm, wavenumberToUse)
-      scanDataDic['wavemeter'] = wm
+      if notDumb: wm[['wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']] = wm[['wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']].apply(pd.to_numeric,downcast='float')
+      #scanDataDic['wavemeter'] = wm
       scanDataDic['has_wavemeter'] = True  
 
     elif dirlist[i] == 'metadata_wavemeter_pdl_ds.txt':
-      pdl_colNames = ['timestamp', 'offset', 'wavenumber_pdl']
-      pdl = pd.read_csv(scanDir + "wavemeter_pdl_ds.csv", sep=';', names=pdl_colNames)
-      scanDataDic['wavemeter_pdl'] = pdl
-      scanDataDic['has_wavemeter_pdl'] = True
+      if wavenumber == "pdl":
+        pdl_colNames = ['timestamp', 'offset', 'wavenumber_pdl']
+        pdl = pd.read_csv(scanDir + "wavemeter_pdl_ds.csv", sep=';', names=pdl_colNames)
+        if cleanWM == True : pdl = wavemeterDataCleaner(pdl, wavenumberToUse)
+        if notDumb: pdl['wavenumber_pdl'] = pdl['wavenumber_pdl'].apply(pd.to_numeric,downcast='float')
+        #scanDataDic['wavemeter_pdl'] = pdl
+        scanDataDic['has_wavemeter_pdl'] = True
 
-  mfouter = pd.merge_ordered(tag, wm, on='timestamp', how='outer')# every scan _should_ have tagger and wavemeter data (or else what's the point?)
+  mfouter = pd.merge_ordered(tag.loc[:,['timestamp','bunch_no','events_per_bunch']], wm.loc[:,['timestamp','wavenumber_1','wavenumber_2']], on='timestamp', how='outer')# every scan _should_ have tagger and wavemeter data (or else what's the point?)
   if scanDataDic['has_iscool'] == True:
-    mfouter = pd.merge_ordered(mfouter, ic, on='timestamp', how='outer')
-  if scanDataDic['has_wavemeter_pdl'] == True:
-    mfouter = pd.merge_ordered(mfouter, pdl, on='timestamp', how='outer')
+    mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','voltage','betaVals','dopplerShiftFactor']], on='timestamp', how='outer')
+  if scanDataDic['has_wavemeter_pdl'] and (wavenumberToUse=="wavenumber_pdl"):
+    mfouter = pd.merge_ordered(mfouter, pdl.loc[:,['timestamp','wavenumber_pdl']], on='timestamp', how='outer')
+
+  #mfouter['timestamp'] = mfouter['timestamp'].apply(pd.to_numeric,downcast='float')
+
   #mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill',inplace=True) #".loc indexed to a list of columns won't support inplace operations"...
-  mfouter.loc[:,"wavenumber_1":"wavenumber_4"] = mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill')
+  #mfouter.loc[:,"wavenumber_1":"wavenumber_4"] = mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill') #2/Aug/2019. It looks like this is causing a MemoryError sometimes?
+  mfouter.loc[:,wavenumberToUse].fillna(method='backfill', inplace=True)
+  #Don't forget to backfill reference laser data as well, once I figure out how/when to do that... 
   if scanDataDic['has_iscool'] == True:
-       mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']] = mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']].fillna(method='backfill')
-  if scanDataDic['has_wavemeter_pdl'] == True:
-       mfouter.loc[:,'wavenumber_pdl'] = mfouter.loc[:,'wavenumber_pdl'].fillna(method='backfill')
+       #mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']] = mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']].fillna(method='backfill') #2/Aug/2019. It looks like this is causing a MemoryError sometimes?
+       mfouter.loc[:,'voltage'].fillna(method='backfill', inplace=True)
+       mfouter.loc[:,'betaVals'].fillna(method='backfill', inplace=True)
+       mfouter.loc[:,'dopplerShiftFactor'].fillna(method='backfill', inplace=True)
+  """if scanDataDic['has_wavemeter_pdl'] == True:
+       mfouter.loc[:,'wavenumber_pdl'] = mfouter.loc[:,'wavenumber_pdl'].fillna(method='backfill')"""
 
   if verbose: print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
 
-  mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a)
+  mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a) #2/Aug/2019. 10:11PM Going to just do this earlier on the original tag dataframe
+  mfouter["events_per_bunch"]=mfouter["events_per_bunch"].astype('Int8',downcast='unsigned')
 
-  if verbose: print("TEST5:\n", mfouter.loc[:49,"timestamp":wavenumberToUse])
-  mfouter = mfouter[pd.notna(mfouter['bunch_no'])]
-  mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]
+  if verbose: print("TEST5:\n", mfouter.loc[:,"timestamp":wavenumberToUse])
+  if verbose: print("TEST5b:\n", mfouter.info())
+  mfouter = mfouter[pd.notna(mfouter['bunch_no'])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
+  mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
+
   if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse,'betaVals','dopplerShiftFactor']])
   tStamps = np.array(mfouter.loc[:,'timestamp'])
   mfouter.loc[0:,'timeDiffs'] = pd.Series(np.append(0,tStamps[1:]-tStamps[:-1]), index=mfouter.index[0:])
@@ -197,8 +219,8 @@ def fileWriter(output, m, scanInd):
     os.mkdir('./FrequencyConvertedDatasets/%d'%m)
   output.to_csv(path_or_buf='./FrequencyConvertedDatasets/%d/scan_%d.csv'%(m, scanInd), sep=',', float_format='%.11f', columns=['signal_uncertainty','wavenumber_mean','signal_value'], index=True, header=['error','freq','rate'])
 
-def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=False, makePlot=False):
-  mfba =  rawDatPrep(m, scanInd, wavenumber)
+def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=False, makePlot=False, cleanWM=False, verbose=False):
+  mfba =  rawDatPrep(m, scanInd, wavenumber, verbose=verbose)
   if resolution==-1: output = makeUseable(mfba, nBins=nBins)
   else: output = makeUseable(mfba, resolution=resolution)
   if writeToFile: fileWriter(output, m, scanInd)
@@ -206,22 +228,21 @@ def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=F
   return(output)
 
 if __name__ == '__main__':
-
   
+  notDumb=True
   mass = 245
-  scanIndex = 2319
+  scanIndex = 2324#2324
   wmNum = 2
-  numBins = 500
+  numBins = 230
 
-  mfba =  rawDatPrep(mass, scanIndex, wmNum)
-  print("test 9:\n", mfba.head)
+  mfba =  rawDatPrep(mass, scanIndex, wmNum, cleanWM=True, verbose=True)
+  """print("test 9:\n", mfba.head)
   print("test 10:\n", mfba.tail())
   output = makeUseable(mfba, nBins=numBins)
   print("test11:\n", output)
-  plotData(output, mass, scanIndex, wmNum, nBins=numBins)
+  plotData(output, mass, scanIndex, wmNum, nBins=numBins)"""
 
-  for w in [1,2,3,4,'pdl']:
-    doEverything(242, 2314, w)
+  #doEverything(245, 2319, 2, cleanWM=True, makePlot=True, nBins=230, verbose=True)
 
     
   #New merging thing?
