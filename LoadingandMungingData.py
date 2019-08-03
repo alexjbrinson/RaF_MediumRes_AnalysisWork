@@ -119,8 +119,13 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
         #scanDataDic['wavemeter_pdl'] = pdl
         scanDataDic['has_wavemeter_pdl'] = True
 
+  #Whenever channel = -1 (which is almost certainly intended to indicate a glitch, right?), events_per_bunch is invariably 0;
+  #the detector literally can't count events during those -1 intervals. And yet they're counting against my count rates. It's just a bunch of extra dead times in the denominator, I think
+  #tag["channel"]=tag["channel"].map(lambda a: float('NaN') if a < 0 else a) 
+  #tag=tag[pd.notna(tag['channel'])]
+
   if scanDataDic['has_wavemeter']:
-    mfouter = pd.merge_ordered(tag.loc[:,['timestamp','bunch_no','events_per_bunch']], wm.loc[:,['timestamp','wavenumber_1','wavenumber_2']], on='timestamp', how='outer')# every scan _should_ have tagger and wavemeter data (or else what's the point?)
+    mfouter = pd.merge_ordered(tag.loc[:,['timestamp','bunch_no','events_per_bunch','channel']], wm.loc[:,['timestamp','wavenumber_1','wavenumber_2']], on='timestamp', how='outer')# every scan _should_ have tagger and wavemeter data (or else what's the point?)
   else: mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch']]
   if scanDataDic['has_iscool'] == True:
     #mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','voltage','betaVals','dopplerShiftFactor']], on='timestamp', how='outer') #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
@@ -141,13 +146,13 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
        mfouter.loc[:,'dopplerShiftFactor'].fillna(method='backfill', inplace=True)
   """if scanDataDic['has_wavemeter_pdl'] == True:
        mfouter.loc[:,'wavenumber_pdl'] = mfouter.loc[:,'wavenumber_pdl'].fillna(method='backfill')"""
-
-  if verbose: print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
+  
+  if verbose: print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", 'channel', wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
 
   mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a) #2/Aug/2019. 10:11PM Going to just do this earlier on the original tag dataframe
   mfouter["events_per_bunch"]=mfouter["events_per_bunch"].astype('Int8',downcast='unsigned')
 
-  if verbose: print("TEST5:\n", mfouter.loc[:,"timestamp":wavenumberToUse])
+  if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'events_per_bunch','channel',wavenumberToUse]])
   print(mfouter.info())
   mfouter = mfouter[pd.notna(mfouter['bunch_no'])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
   mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
@@ -155,6 +160,10 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
   if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse]])
   tStamps = np.array(mfouter.loc[:,'timestamp'])
   mfouter.loc[0:,'timeDiffs'] = pd.Series(np.append(0,tStamps[1:]-tStamps[:-1]), index=mfouter.index[0:])
+  
+  mfouter["channel"]=mfouter["channel"].map(lambda a: float('NaN') if a < 0 else a) #3/Aug/2019. 1:50AM pls work!
+  mfouter=mfouter[pd.notna(mfouter['channel'])]
+
   if scanDataDic['has_iscool'] == True:
     #mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*mfouter.loc[:, 'dopplerShiftFactor'] #FOUND ERROR IN PAPER
     mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]/mfouter.loc[:, 'dopplerShiftFactor']
@@ -240,9 +249,9 @@ def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=F
 if __name__ == '__main__':
   
   mass = 245
-  scanIndex = 2323#2324
-  wmNum = 'pdl'
-  numBins = 230
+  scanIndex = 2178#2324
+  wmNum = 2#'pdl'
+  numBins = 1000
 
   mfba =  rawDatPrep(mass, scanIndex, wmNum, cleanWM=True, verbose=True)
   print("test 9:\n", mfba.head)
