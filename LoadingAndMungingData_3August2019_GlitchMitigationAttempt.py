@@ -69,37 +69,7 @@ def wavemeterDataCleaner(df, wavenumberToUse):
   #print("TEST. wmCleaned:\n", wmCleaned)
   return(wmCleaned)
 
-def whichWavemeter(mass, scanInd, verbose=False):
-  #Determines which wavemeter should be used based on which has the largest range (post-cleaning)
-  wmRanges = [-1,-1,-1,-1,-1]
-  scanDir = '../RaF_RawData/'+str(mass)+'/scan_'+str(scanInd)+'/'
-  scanDataDic = {}
-  scanDataDic['has_wavemeter'] = False; scanDataDic['has_wavemeter_pdl'] = False;
-  dirlist=os.listdir(scanDir)
-  for i in range(len(dirlist)):
-    if dirlist[i] == 'metadata_wavemeter_ds.txt':
-      wm_colNames = ['timestamp', 'offset', 'wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']
-      wm = pd.read_csv(scanDir + "wavemeter_ds.csv", sep=';', names=wm_colNames)
-      for i in [1,2,3,4]:
-        wmArray = np.array(wm['wavenumber_'+str(i)])
-        wmFiltered = np.ma.compressed(np.ma.masked_less(wmArray, 0))
-        if verbose: print("whichWavemeterTest1: wmFiltered:\n", wmFiltered)
-        if len(wmFiltered)==0: wmRanges[i]=-1
-        else: wmRanges[i] = np.max(wmFiltered)- np.min(wmFiltered)
-
-    elif dirlist[i] == 'metadata_wavemeter_pdl_ds.txt':
-        pdl_colNames = ['timestamp', 'offset', 'wavenumber_pdl']
-        pdl = pd.read_csv(scanDir + "wavemeter_pdl_ds.csv", sep=';', names=pdl_colNames)
-        pdlArray = np.array(pdl['wavenumber_pdl'])
-        pdlFiltered = np.ma.compressed(np.ma.masked_less(pdlArray, 0))
-        if verbose: print("whichWavemeterTest1: pdlFiltered:\n", pdlFiltered)
-        if len(pdlFiltered)==0: wmRanges[0]=-1
-        else: wmRanges[0] = np.max(pdlFiltered)- np.min(pdlFiltered)
-  maxArg = np.argmax(wmRanges)
-  thisWavemeter = 'pdl' if maxArg == 0 else maxArg
-  return(thisWavemeter)
-
-def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False, glitchMitigation=False):
+def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
   #TODO: function description
   mass = m
   scanIndex = scanInd
@@ -156,11 +126,10 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False, glitchMitig
   #the detector literally can't count events during those -1 intervals. And yet they're counting against my count rates. It's just a bunch of extra dead times in the denominator, I think
   #tag["channel"]=tag["channel"].map(lambda a: float('NaN') if a < 0 else a) 
   #tag=tag[pd.notna(tag['channel'])]
-  if glitchMitigation: 
-    mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch','channel']]
-    chans = np.array(mfouter.loc[:,'channel'])
-    mfouter["chanSums"]=pd.Series(np.append([15,15],np.append(chans[:-4]+chans[1:-3]+chans[2:-2]+chans[3:-1]+chans[4:],[15,15])), index=mfouter.index[0:])
-  else: mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch']]
+  mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch','channel']]
+
+  chans = np.array(mfouter.loc[:,'channel'])
+  mfouter["chanSums"]=pd.Series(np.append([15,15],np.append(chans[:-4]+chans[1:-3]+chans[2:-2]+chans[3:-1]+chans[4:],[15,15])), index=mfouter.index[0:])
 
   if scanDataDic['has_wavemeter']:
     mfouter = pd.merge_ordered(mfouter, wm.loc[:,['timestamp','wavenumber_1','wavenumber_2']], on='timestamp', how='outer')
@@ -171,7 +140,7 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False, glitchMitig
     mfouter = pd.merge_ordered(mfouter, pdl.loc[:,['timestamp','wavenumber_pdl']], on='timestamp', how='outer')
 
   mfouter.loc[:,wavenumberToUse].fillna(method='backfill', inplace=True)
-  if glitchMitigation: mfouter.loc[:,'chanSums'].fillna(method='backfill', inplace=True)
+  mfouter.loc[:,'chanSums'].fillna(method='backfill', inplace=True)
 
   #mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill',inplace=True) #".loc indexed to a list of columns won't support inplace operations"...
   #mfouter.loc[:,"wavenumber_1":"wavenumber_4"] = mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill') #2/Aug/2019. It looks like this is causing a MemoryError sometimes?
@@ -227,20 +196,22 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False, glitchMitig
           break
       except OSError:
         conditionMet = False
-  if verbose: print("TEST7:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel' if glitchMitigation else wavenumberToUse]])
+  if verbose: print("TEST7:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel', wavenumberToUse]])
 
-  #mfouter.loc[:,'channel'].fillna(method='backfill', inplace=True) #3/Aug/2019. 3:20 PM want to back-fill values _before_ I throw out all the NaNs!
+  mfouter.loc[:,'channel'].fillna(method='backfill', inplace=True) #3/Aug/2019. 3:20 PM want to back-fill values _before_ I throw out all the NaNs!
 
-  if verbose: print("TEST8:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel' if glitchMitigation else wavenumberToUse]])
+  if verbose: print("TEST8:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel', wavenumberToUse]])
 
   #mfouter["channel"]=mfouter["channel"].map(lambda a: float('NaN') if a < 0 else a) #3/Aug/2019. 1:50AM pls work!
 
-  if glitchMitigation:
-    mfouter["chanSums"]=mfouter["chanSums"].map(lambda a: a if a > -5 else float('NaN')) #3/Aug/2019. 1:50AM pls work!
-    mfouter["chanSums"]=mfouter["chanSums"].astype('Int8',downcast='integer')
-    if verbose: print("TEST9:\n", mfouter.loc[mfouter.index[88800:88900],['timeDiffs',"events_per_bunch",'chanSums', wavenumberToUse]])
-    mfouter=mfouter[pd.notna(mfouter['chanSums'])]
-    if verbose: print("TEST10:\n", mfouter.loc[:,['timeDiffs',"events_per_bunch",'chanSums', wavenumberToUse]])
+  mfouter["chanSums"]=mfouter["chanSums"].map(lambda a: a if a > -5 else float('NaN')) #3/Aug/2019. 1:50AM pls work!
+  mfouter["chanSums"]=mfouter["chanSums"].astype('Int8',downcast='integer')
+
+  if verbose: print("TEST9:\n", mfouter.loc[mfouter.index[88800:88900],['timeDiffs',"events_per_bunch",'channel','chanSums', wavenumberToUse]])
+
+  mfouter=mfouter[pd.notna(mfouter['chanSums'])]
+
+  if verbose: print("TEST10:\n", mfouter.loc[:,['timeDiffs',"events_per_bunch",'channel','chanSums', wavenumberToUse]])
 
   preppedDataFrame = mfouter.loc[:,["timestamp", 'timeDiffs', 'wavenumber', 'events_per_bunch']].copy()
   del(mfouter)
@@ -304,7 +275,7 @@ if __name__ == '__main__':
   scanIndex = 2178#2324
   wmNum = 2#'pdl'
   numBins = 280
-  print("mass 245, scan 2178, Which wavemeter?\n This wavemeter:",whichWavemeter(245,2178))
+
   mfba =  rawDatPrep(mass, scanIndex, wmNum, cleanWM=True, verbose=True)
   #print("test 9:\n", mfba.head)
   #print("test 10:\n", mfba.tail)

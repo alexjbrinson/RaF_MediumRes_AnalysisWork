@@ -6,60 +6,36 @@ import LoadingAndMungingData as lmd
 import FrequencyConvertedUtilityKit as fcuk
 import matplotlib.patches as mpatches
 from matplotlib.patches import Rectangle
+import json
 """import lmfit
 from lmfit import Model, Parameter
 from lmfit.models import SkewedVoigtModel, LinearModel, GaussianModel, LorentzianModel
 import emcee"""
 
-'''1. "Check that the data files that I sent you before (frequency converted) agree with your frequency conversion"'''
-
-dirlist=os.listdir('scans245')
-scanInds245OLD = []
-print("test1. os.listdir('scans245'):\n",dirlist)
-for i in range(len(dirlist)):
-  if (dirlist[i].endswith('.csv') and dirlist[i].startswith('245RaF_LR_')):
-    scanInds245OLD.append( int(dirlist[i].replace('.csv',"").replace('245RaF_LR_',"")) )
-print("test2. scanInds245OLD:\n",scanInds245OLD)
-
-datDic = {}
-for i in range(len(scanInds245OLD)):
-  datArray = np.loadtxt('scans245/245RaF_LR_'+str(scanInds245OLD[i])+'.csv', dtype=float, skiprows=1, delimiter=',')
-  if datArray.ndim != 2:
-    print("Junk dataset from scan "+str(scanInds245OLD[i])+". Will throw out.")
-  elif len(datArray[:,2])<20:
-    print("Few datapoints in scan "+str(scanInds245OLD[i])+". Will throw out.")
+'''2. "Do the same of the different isotopes 223-228Ra"'''
+def prepMassScans(mass, verbose=False, redo=False):
+  massDir= '../RaF_RawData/'+str(mass)+'/'
+  dirlist=os.listdir(massDir)
+  scanInds = []
+  for scanFolder in dirlist:
+    scanInds.append(int(scanFolder.lstrip('scan_')))
+  if verbose: print("mass%d scanInds: "%mass, scanInds)
+  colorDict={'pdl':"Red", 1:'Green', 2:'Blue', 3:'Purple', 4:'Orange'}
+  wavemeterDic={}
+  if os.path.exists('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass) and (redo==False):
+    with open('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass,'r') as dicFile:
+      wavemeterDic = json.load(dicFile)
   else:
-    if np.any(datArray[:,2]<0):
-      mask = datArray[:,2]>0
-      datArray = np.array(datArray[[mask==True]])
-      print("Scan "+str(scanInds245OLD[i])+" contained negative wavenumbers...", str(len(mask)-len(datArray[:,2])) + " data point(s) have been removed. Updated array shape =", datArray.shape)
-    datDic[scanInds245OLD[i]] = datArray #fcuk.cleanDataSet(datArray)
-    """if scanInds245OLD[i]==2137:
-      print("All of the signal in Scan 2137 occurs in the first 6th of the dataset. Will crop the rest so it doesn't dominate the fits.")
-      datArray=datDic[2137]
-      rCutoff = np.argmin(np.abs(datArray[:,2]-13325))
-      datDic[2137] = datArray[:rCutoff]
-    elif scanInds245OLD[i]==2138:
-      print("All of the signal in Scan 2138 occurs in the last 6th of the dataset. Will crop the rest so it doesn't dominate the fits.")
-      datArray=datDic[2138]
-      lCutoff = np.argmin(np.abs(datArray[:,2]-13225))
-      datDic[2138] = datArray[lCutoff:]
-    elif scanInds245OLD[i]==2178:
-      print("There's some fishy business going on int the first quarter of Scan 2178. Will crop so it doesn't screw up my fits.")
-      datArray=datDic[2178]
-      lCutoff = np.argmin(np.abs(datArray[:,2]-13256))
-      datDic[2178] = datArray[lCutoff:]
-    elif scanInds245OLD[i]==2368:
-      print("Scan 2368 has garbage at the very end. Will crop so it doesn't screw up my fits.")
-      datArray=datDic[2368]
-      datDic[2368] = datArray[:-2]""" #This commented out part was actually useful for trimming trashy data sets. But for now I'm just trying to use the lowRes files as a reference to compare my panda outputs with
+    for s in np.sort(scanInds):
+      wavemeterDic[str(s)]=str(lmd.whichWavemeter(mass,s))
+    if not os.path.exists('./wavemeterToUseDictionaries/'):
+      os.mkdir('./wavemeterToUseDictionaries/')
+    with open('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass,'wb') as dicFile:
+      dicFile.write(json.dumps(wavemeterDic,sort_keys=True).encode("utf-8"))
+  if verbose: print("mass: %d  wavemeter Dictionary:\n"%mass, wavemeterDic)
+  return(wavemeterDic)
 
-print("datDic.keys()", list(datDic.keys()))
-
-dyeInds = [2130,2131,2132,2323,2324,2325,2346,2360,2364,2365,2368,2375,2376]
-tiSapInds = [2135,2136,2137,2138,2139,2164,2165,2178,2309,2310,2317,2319,2320,2340,2341,2349,2350]
-
-fig1 = plt.figure("Wavenumber Ranges")
+"""fig1 = plt.figure("Wavenumber Ranges")
 counter=0
 unclearScansExist=False
 for k in np.sort(list(datDic.keys())):
@@ -108,8 +84,24 @@ def dataFileComparator(scanInd):
   plt.close()
   del(newDataFrame)
 
-for scindex in np.sort(list(datDic.keys())): dataFileComparator(scindex)
+for scindex in np.sort(list(datDic.keys())): dataFileComparator(scindex)"""
+allScansBigDic = {}
+for m in [241,242,243,244,245,247]:
+  allScansBigDic[m] = prepMassScans(m, redo=True, verbose=True)
 
-'''2. "Do the same of the different isotopes 223-228Ra"'''
+print("test? allScansBigDic:\n",allScansBigDic)
+"""
+plt.xlabel('Scan number', fontsize=18)
+plt.ylabel('Molecule Mass (amu)', fontsize=18)
+red_patch = mpatches.Patch(color='red', label="COBRA Dye Laser Scans")
+green_patch = mpatches.Patch(color='green', label="Other Dy Laser Scans")
+blue_patch = mpatches.Patch(color='blue', label="Ti:Sa Laser Scans")
+purple_patch = mpatches.Patch(color='purple', label="wavemeter_3")
+orange_patch = mpatches.Patch(color='orange', label="wavemeter_4")
+#plt.legend(loc=4, handles=[red_patch, green_patch, blue_patch, purple_patch, orange_patch], fontsize=16)
+plt.legend(loc=4, handles=[red_patch, green_patch, blue_patch], fontsize=16)
+plt.title(r'Overview of All RaF Data', fontsize=24)
+plt.gcf().set_size_inches(20, 12)
+plt.savefig("RaFAllDataOverviewPlot.png")"""
 '''3. "Analyse each scan individually and extract an average "peak position" for each electronic transition "'''
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''
