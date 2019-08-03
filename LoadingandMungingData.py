@@ -11,8 +11,10 @@ import os
 
 """TODO: A lotta stuff...
 1. How to know which wavemeter to use??? (In Progress!)
-2. Wavemeter correction for high res scans
-3. Then what?
+2. Fix "dead time" error related to negative channel number (work in progress...)
+3. change wavenumber statistic in makeUsable() to take weighted averages. #DONE! unless I should be weighting by events counted...
+4. New Tasks...
+5. Wavemeter correction for high res scans
 """
 
 """
@@ -73,7 +75,7 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
   scanIndex = scanInd
   wmNum = wavenumber
   wavenumberToUse = "wavenumber_"+str(wmNum)
-  scanDir = '../RaF_RawData/'+str(mass)+'/scan_'+str(scanIndex)+"/"
+  scanDir = '../RaF_RawData/'+str(mass)+'/scan_'+str(scanIndex)+'/'
   dSetTypes = ['iscool', 'tagger', 'wavemeter', 'wavemeter_pdl']
   scanDataDic = {}
   scanDataDic['has_iscool'] = False; scanDataDic['has_tagger'] = False; scanDataDic['has_wavemeter'] = False; scanDataDic['has_wavemeter_pdl'] = False;
@@ -93,10 +95,11 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
     elif dirlist[i] == 'metadata_tagger_ds.txt':
       #tagger_mdFile = open()
       tag_colNames = ['timestamp', 'offset', 'bunch_no', 'events_per_bunch', 'channel', 'delta_t']
-      tag = pd.read_csv(scanDir + "tagger_ds.csv", sep=';', names=tag_colNames, dtype={'bunch_no':'Int32', 'events_per_bunch':'Int32'})
+      tag = pd.read_csv(scanDir + "tagger_ds.csv", sep=';', names=tag_colNames, dtype={'bunch_no':'Int32', 'events_per_bunch':'Int32', 'channel':'Int8'})
       #tag['bunch_no'].apply()
       #tag['events_per_bunch'].apply()
       tag[['bunch_no','events_per_bunch']]=tag[['bunch_no','events_per_bunch']].apply(pd.to_numeric, downcast='unsigned')
+      tag[['channel']]=tag[['channel']].apply(pd.to_numeric, downcast='integer')
       #tag[['bunch_no','events_per_bunch']].astype( downcast='unsigned')
       #tag["events_per_bunch"]=tag["events_per_bunch"].map(lambda a: int(1) if a > 0 else int(a))
       #scanDataDic['tagger'] = tag
@@ -126,7 +129,7 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
 
   if scanDataDic['has_wavemeter']:
     mfouter = pd.merge_ordered(tag.loc[:,['timestamp','bunch_no','events_per_bunch','channel']], wm.loc[:,['timestamp','wavenumber_1','wavenumber_2']], on='timestamp', how='outer')# every scan _should_ have tagger and wavemeter data (or else what's the point?)
-  else: mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch']]
+  else: mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch','channel']]
   if scanDataDic['has_iscool'] == True:
     #mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','voltage','betaVals','dopplerShiftFactor']], on='timestamp', how='outer') #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
     mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','dopplerShiftFactor']], on='timestamp', how='outer') #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
@@ -149,8 +152,9 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
   
   if verbose: print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", 'channel', wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
 
-  mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a) #2/Aug/2019. 10:11PM Going to just do this earlier on the original tag dataframe
+  mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a)
   mfouter["events_per_bunch"]=mfouter["events_per_bunch"].astype('Int8',downcast='unsigned')
+  #remove "NaN" entries from events_per_bunch now? so that timeDiffs aren't computed including these non-counting event counts.
 
   if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'events_per_bunch','channel',wavenumberToUse]])
   print(mfouter.info())
@@ -158,12 +162,9 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
   mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
 
   if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse]])
-  tStamps = np.array(mfouter.loc[:,'timestamp'])
-  mfouter.loc[0:,'timeDiffs'] = pd.Series(np.append(0,tStamps[1:]-tStamps[:-1]), index=mfouter.index[0:])
+  tStamps = np.array(mfouter.loc[:,'timestamp']); tDiffs = tStamps[1:]-tStamps[:-1]; print('np.mean(tDiffs) = ',np.mean(tDiffs)); assert(np.mean(tDiffs)<1) #If assertion fails, average tDiff is larger than I'd been expecting... Maybe take a look at this.
+  mfouter.loc[0:,'timeDiffs'] = pd.Series(np.append(np.mean(tDiffs),tDiffs), index=mfouter.index[0:]) #appending mean timeDiff at front, bc I don't want the first bunch/s rate to be infinite
   
-  mfouter["channel"]=mfouter["channel"].map(lambda a: float('NaN') if a < 0 else a) #3/Aug/2019. 1:50AM pls work!
-  mfouter=mfouter[pd.notna(mfouter['channel'])]
-
   if scanDataDic['has_iscool'] == True:
     #mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*mfouter.loc[:, 'dopplerShiftFactor'] #FOUND ERROR IN PAPER
     mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]/mfouter.loc[:, 'dopplerShiftFactor']
@@ -191,6 +192,28 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False):
           break
       except OSError:
         conditionMet = False
+  if verbose: print("TEST7:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel', wavenumberToUse]])
+
+  mfouter.loc[:,'channel'].fillna(method='backfill', inplace=True) #3/Aug/2019. 3:20 PM want to back-fill values _before_ I throw out all the NaNs!
+
+  if verbose: print("TEST8:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel', wavenumberToUse]])
+
+  #mfouter["channel"]=mfouter["channel"].map(lambda a: float('NaN') if a < 0 else a) #3/Aug/2019. 1:50AM pls work!
+  chans = np.array(mfouter.loc[:,'channel'])
+  """if np.any(not(chans.any()==3 or chans.any()==float('NaN'))):
+    print("WHoaH Nelly. I may be drunk, but this assumption was TraSH")
+    print(chans)
+    quit()"""
+  mfouter["chanSums"]=pd.Series(np.append([15,15],np.append(chans[:-4]+chans[1:-3]+chans[2:-2]+chans[3:-1]+chans[4:],[15,15])), index=mfouter.index[0:])
+  mfouter["chanSums"]=mfouter["chanSums"].map(lambda a: a if a > -5 else float('NaN')) #3/Aug/2019. 1:50AM pls work!
+  mfouter["chanSums"]=mfouter["chanSums"].astype('Int8',downcast='integer')
+
+  if verbose: print("TEST9:\n", mfouter.loc[mfouter.index[88800:88900],['timeDiffs',"events_per_bunch",'channel','chanSums', wavenumberToUse]])
+
+  mfouter=mfouter[pd.notna(mfouter['chanSums'])]
+
+  if verbose: print("TEST10:\n", mfouter.loc[:,['timeDiffs',"events_per_bunch",'channel','chanSums', wavenumberToUse]])
+
   preppedDataFrame = mfouter.loc[:,["timestamp", 'timeDiffs', 'wavenumber', 'events_per_bunch']].copy()
   del(mfouter)
 
@@ -203,12 +226,13 @@ def makeUseable(df, nBins=100, resolution=-1):
   if resolution<0: binQuant = nBins
   else: binQuant = math.ceil(kRange/resolution)
   print("TESTSTSSTSTS: numBins=%d"%binQuant)
+  df.loc[:,'waveProds'] = df.loc[:,'wavenumber']*df.loc[:,'timeDiffs']
   kBins = pd.cut(df.loc[:,"wavenumber"], bins=binQuant)#, retbins=True)
 
-  print("test8.\n", df.groupby(kBins).head() )
+  #print("makeUsable test1.\n", df.groupby(kBins).head() )
   #print("test8.\n", kBins )
 
-  aggDat = df.groupby(kBins).agg({'wavenumber':['mean', 'min', 'max'], 'events_per_bunch':['sum'], 'timeDiffs':['sum']}).reset_index() #Wtf apparently reset_index() is p important... 
+  aggDat = df.groupby(kBins).agg({'wavenumber':['mean', 'min', 'max'], 'events_per_bunch':['sum'], 'timeDiffs':['sum'], 'waveProds':['sum']}).reset_index() #Wtf apparently reset_index() is p important... 
 
   """outputDF = pd.DataFrame({"wavenumber_mean"   : aggDat.loc[:,(wavenumberToUse,'mean')],
                         "signal_value"         : aggDat.loc[:,('events_per_bunch','sum')]/aggDat.loc[:,('timeDiffs','sum')],
@@ -216,9 +240,9 @@ def makeUseable(df, nBins=100, resolution=-1):
                         "measurement_duration" : aggDat.loc[:,('timeDiffs','sum')], 
                         "wavenumber_lowerUncert"     : aggDat.loc[:,(wavenumberToUse,'mean')]-aggDat.loc[:,(wavenumberToUse,'min')],
                         "wavenumber_upperUncert"     : aggDat.loc[:,(wavenumberToUse,'max')]-aggDat.loc[:,(wavenumberToUse,'mean')]},index=range(len(kBins) ) )"""
-  outputDF = pd.DataFrame({"wavenumber_mean"   : aggDat.loc[:,('wavenumber','mean')],
+  outputDF = pd.DataFrame({"wavenumber_mean"   : aggDat.loc[:,('waveProds','sum')]/aggDat.loc[:,('timeDiffs','sum')], #aggDat.loc[:,('wavenumber','mean')], #small change, but reported wavenumber is now weighted by measurement time.
                         "signal_value"         : aggDat.loc[:,('events_per_bunch','sum')]/aggDat.loc[:,('timeDiffs','sum')],
-                        "signal_uncertainty"   : np.sqrt(aggDat.loc[:,('events_per_bunch','sum')])/aggDat.loc[:,('timeDiffs','sum')],
+                        "signal_uncertainty"   : np.maximum(2,np.sqrt(aggDat.loc[:,('events_per_bunch','sum')]))/aggDat.loc[:,('timeDiffs','sum')],
                         "measurement_duration" : aggDat.loc[:,('timeDiffs','sum')]},index=range(binQuant) )
   return(outputDF)
 
@@ -251,11 +275,11 @@ if __name__ == '__main__':
   mass = 245
   scanIndex = 2178#2324
   wmNum = 2#'pdl'
-  numBins = 1000
+  numBins = 280
 
   mfba =  rawDatPrep(mass, scanIndex, wmNum, cleanWM=True, verbose=True)
-  print("test 9:\n", mfba.head)
-  print("test 10:\n", mfba.tail())
+  #print("test 9:\n", mfba.head)
+  #print("test 10:\n", mfba.tail)
   output = makeUseable(mfba, nBins=numBins)
   print("test11:\n", output)
   plotData(output, mass, scanIndex, wmNum, nBins=numBins)
