@@ -24,7 +24,7 @@ def prepMassScans(mass, verbose=False, redo=False):
   wavemeterDic={}
   if os.path.exists('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass) and (redo==False):
     with open('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass,'r') as dicFile:
-      wavemeterDic = json.load(dicFile)
+      wavemeterDic = json.load(dicFile, parse_int=True)
   else:
     for s in np.sort(scanInds):
       wavemeterDic[str(s)]=str(lmd.whichWavemeter(mass,s))
@@ -60,36 +60,70 @@ plt.title(r'Wavenumber Ranges of $^{226}$Ra$^{19}$F LowRes Scans', fontsize=24)
 plt.gcf().set_size_inches(20, 12)
 plt.savefig("ScanWavenumberRanges.png")
 
-def dataFileComparator(scanInd):
-  print("Now comparating scan_%d"%scanInd)
-  oldLowResDatArray = datDic[scanInd]
-  if scanInd in dyeInds: waveMeter = 'pdl'
-  elif scanInd in tiSapInds: waveMeter = 2
-  else: wavemeter = 'fsdaasdfads'
-  binCount = len(oldLowResDatArray[:,2])
-  needWrite = not os.path.exists('./FrequencyConvertedDatasets/245/scan_%d'%scanInd)
-  newDataFrame = lmd.doEverything(245, scanInd, waveMeter, nBins=binCount, writeToFile=needWrite, makePlot=False, cleanWM=True, verbose=False)
-  plt.figure("output Plot, mass: %d scan: "%245 +str(scanInd)+ " wavenumber: " +str(waveMeter)+ " numBins: %d"%binCount)
-  plt.gcf().set_size_inches(20, 12)
-  plt.errorbar(oldLowResDatArray[:,2], oldLowResDatArray[:,3], yerr = oldLowResDatArray[:,1], fmt='bo-', ecolor='k', alpha=.3, label='oldLowResDatArray')
-  plt.fill_between(oldLowResDatArray[:,2], oldLowResDatArray[:,3],color='blue', alpha=.3)
-  plt.errorbar(x=newDataFrame.loc[:,'wavenumber_mean'], y=newDataFrame.loc[:,'signal_value'], yerr=newDataFrame.loc[:,'signal_uncertainty'], fmt="ro-", ecolor='k', label='newDataFrame', markersize=3)
-  plt.title('Mass: %d ; scan: '%245 +str(scanInd)+ ' wavemeter_' + str(waveMeter)+ '\ncount rate vs wavenumber for %d wavenumber bins'% len(newDataFrame.loc[:,'wavenumber_mean']), fontsize=24)
-  plt.xlabel(r'wavenumber ($cm^{-1}$)', fontsize=18)
-  plt.ylabel('rate (counts/s)', fontsize=18)
-  plt.legend(loc=2, fontsize=18)
-  if not os.path.exists('./FrequencyConvertedDatasets/245ComparatorPlots/'):
-    os.mkdir('./FrequencyConvertedDatasets/245ComparatorPlots/')
-  plt.savefig('./FrequencyConvertedDatasets/245ComparatorPlots/scan_%dComparisonPlot.png'%scanInd)
-  plt.close()
-  del(newDataFrame)
-
 for scindex in np.sort(list(datDic.keys())): dataFileComparator(scindex)"""
+
 allScansBigDic = {}
 for m in [241,242,243,244,245,247]:
-  allScansBigDic[m] = prepMassScans(m, redo=True, verbose=True)
+  allScansBigDic[m] = prepMassScans(m, redo=False, verbose=True)
 
-print("test? allScansBigDic:\n",allScansBigDic)
+rewrite=True
+
+for m in [241,242,243,244,247]:
+  print("Doing new task. m = ",m)
+  if not os.path.exists('./FrequencyConvertedDatasets/Plots/Mass%dPlots/'%m):
+      os.mkdir('./FrequencyConvertedDatasets/Plots/Mass%dPlots/'%m)
+  scanOverviewFigm = plt.figure('Mass: %d ; Scan Overview Figure'%m)
+  plt.gcf().set_size_inches(20, 12)
+  plt.title(r'Wavenumber Ranges of $^{%d}$Ra$^{19}$F Scans'%(m-19), fontsize=18)
+  plt.xlabel(r'Wavenumber (cm$^{-1}$)', fontsize=18)
+  plt.ylabel('Index of scan', fontsize=18)
+  counter=0
+  for s in np.sort(np.array(list(allScansBigDic[m].keys())).astype(int)):
+    print("s=",s)
+    wmToUse = allScansBigDic[m][str(s)]#I hate that everything has to be stored with strings in json...
+    wmToUse = "pdl" if wmToUse == "pdl" else int(wmToUse)
+    needWrite = (not os.path.exists('./FrequencyConvertedDatasets/%d/scan_%d'%(m,s))) and (rewrite==False)
+    resolution = .01
+    newDataFrame = lmd.doEverything(m, s, wmToUse, resolution=resolution, writeToFile=needWrite, makePlot=False, cleanWM=True, verbose=False)
+    xdat = newDataFrame.loc[:,'wavenumber_mean']; ydat = newDataFrame.loc[:,'signal_value']; sigydat = newDataFrame.loc[:,'signal_uncertainty']
+    if (len(xdat)<100 and np.mean(sigydat)<1):
+      resolution=float(max(xdat)-min(xdat))/100.
+      print("sigh. Redoing scan at %.32f resolution"%resolution)
+      newDataFrame = lmd.doEverything(m, s, wmToUse, resolution=resolution, writeToFile=needWrite, makePlot=False, cleanWM=True, verbose=True)
+      xdat = newDataFrame.loc[:,'wavenumber_mean']; ydat = newDataFrame.loc[:,'signal_value']; sigydat = newDataFrame.loc[:,'signal_uncertainty']
+    plt.figure('output Plot, Mass: %d ; scan: %d wavemeter_'%(m,s) + str(wmToUse))
+    plt.gcf().set_size_inches(20, 12)
+    plt.errorbar(xdat, ydat, yerr=sigydat, fmt='bo-', ecolor='k', alpha=.5, markersize=5)
+    plt.fill_between(xdat, ydat, color='blue', alpha=.3)
+    plt.title(r'$^{%d}$Ra$^{19}$F Scan %d wavemeter_'%(m-19,s) + str(wmToUse)+ '\nCount Rate vs Wavenumber at '+r'$%.3f cm^{-1}$ Resolution'%resolution, fontsize=24)
+    plt.xlabel(r'wavenumber ($cm^{-1}$)', fontsize=18)
+    plt.ylabel('rate (counts/s)', fontsize=18)
+    plt.legend(loc=2, fontsize=18)
+    del(newDataFrame)
+    plt.savefig('./FrequencyConvertedDatasets/Plots/Mass%dPlots/scan_%dComparisonPlot.png'%(m,s))
+    plt.close()
+    plt.figure(scanOverviewFigm.number)
+    if max(xdat)-min(xdat) < 20:
+      plt.plot([np.mean(xdat)-10,np.mean(xdat)+10], [counter,counter], "-", color="grey", alpha=.25, lw=16)
+    if wmToUse == "pdl":
+      plt.plot(xdat, counter*np.ones_like(xdat)+0.0, "r-", alpha=.5, lw=16)
+    elif wmToUse == 1:
+      plt.plot(xdat, counter*np.ones_like(xdat), "g-", alpha=.5, lw=16)
+    elif wmToUse == 2:
+      plt.plot(xdat, counter*np.ones_like(xdat), "b-", alpha=.5, lw=16)
+    else:
+      plt.plot(xdat, counter*np.ones_like(xdat), "y-", alpha=.5, lw=16)
+      unclearScansExist=True
+    plt.text(np.mean(xdat), counter+.0, str(s), fontsize=16, horizontalalignment='center', verticalalignment='center')
+    counter+=1
+  red_patch = mpatches.Patch(color='red', label="COBRA Scans")
+  green_patch = mpatches.Patch(color='green', label="other dye laser scans? or injected Ti:Sa")
+  blue_patch = mpatches.Patch(color='blue', label="Ti:Sa Laser Scans")
+  yellow_patch = mpatches.Patch(color='yellow', label="laser source unclear")
+  lgd = plt.legend(loc="upper right", handles=[red_patch, green_patch, blue_patch, yellow_patch], fontsize=16, bbox_to_anchor=(1,1.2))
+  plt.savefig('./OverviewFigures/%dScanOverviewFigure.png'%m, bbox_extra_artists=(lgd,), bbox_inches='tight')
+  plt.close()
+
 """
 plt.xlabel('Scan number', fontsize=18)
 plt.ylabel('Molecule Mass (amu)', fontsize=18)

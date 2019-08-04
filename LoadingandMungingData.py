@@ -185,14 +185,14 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False, glitchMitig
   """if scanDataDic['has_wavemeter_pdl'] == True:
        mfouter.loc[:,'wavenumber_pdl'] = mfouter.loc[:,'wavenumber_pdl'].fillna(method='backfill')"""
   
-  if verbose: print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", 'channel', wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
+  #if verbose: print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", 'channel', wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
 
   mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a)
   mfouter["events_per_bunch"]=mfouter["events_per_bunch"].astype('Int8',downcast='unsigned')
   #remove "NaN" entries from events_per_bunch now? so that timeDiffs aren't computed including these non-counting event counts.
 
   if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'events_per_bunch','channel',wavenumberToUse]])
-  print(mfouter.info())
+  if verbose: print(mfouter.info())
   mfouter = mfouter[pd.notna(mfouter['bunch_no'])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
   mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
 
@@ -227,13 +227,9 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=False, glitchMitig
           break
       except OSError:
         conditionMet = False
-  if verbose: print("TEST7:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel' if glitchMitigation else wavenumberToUse]])
-
+  #if verbose: print("TEST7:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel' if glitchMitigation else wavenumberToUse]])
   #mfouter.loc[:,'channel'].fillna(method='backfill', inplace=True) #3/Aug/2019. 3:20 PM want to back-fill values _before_ I throw out all the NaNs!
-
-  if verbose: print("TEST8:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel' if glitchMitigation else wavenumberToUse]])
-
-  #mfouter["channel"]=mfouter["channel"].map(lambda a: float('NaN') if a < 0 else a) #3/Aug/2019. 1:50AM pls work!
+  #if verbose: print("TEST8:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel' if glitchMitigation else wavenumberToUse]])
 
   if glitchMitigation:
     mfouter["chanSums"]=mfouter["chanSums"].map(lambda a: a if a > -5 else float('NaN')) #3/Aug/2019. 1:50AM pls work!
@@ -270,7 +266,7 @@ def makeUseable(df, nBins=100, resolution=-1):
                         "wavenumber_upperUncert"     : aggDat.loc[:,(wavenumberToUse,'max')]-aggDat.loc[:,(wavenumberToUse,'mean')]},index=range(len(kBins) ) )"""
   outputDF = pd.DataFrame({"wavenumber_mean"   : aggDat.loc[:,('waveProds','sum')]/aggDat.loc[:,('timeDiffs','sum')], #aggDat.loc[:,('wavenumber','mean')], #small change, but reported wavenumber is now weighted by measurement time.
                         "signal_value"         : aggDat.loc[:,('events_per_bunch','sum')]/aggDat.loc[:,('timeDiffs','sum')],
-                        "signal_uncertainty"   : np.maximum(2,np.sqrt(aggDat.loc[:,('events_per_bunch','sum')]))/aggDat.loc[:,('timeDiffs','sum')],
+                        "signal_uncertainty"   : np.maximum(2, np.sqrt(aggDat.loc[:,('events_per_bunch','sum')]))/aggDat.loc[:,('timeDiffs','sum')],
                         "measurement_duration" : aggDat.loc[:,('timeDiffs','sum')]},index=range(binQuant) )
   return(outputDF)
 
