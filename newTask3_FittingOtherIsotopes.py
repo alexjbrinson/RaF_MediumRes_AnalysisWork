@@ -37,6 +37,7 @@ if __name__ == '__main__':
   
   for m in massList:
     for s in massScanDic[m]:
-      FCUK.Scanalyzer(m,s,resolutionList,peakList=initCenterEsts,peakRanges=initWidthEsts,resList=resolutionList,method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=True, useWeights=True, skew0=-2)
+      #oh right. Some dumbass scans don't include the full range...
+      FCUK.Scanalyzer(m,s,rewrite=False,peakList=initCenterEsts,peakRanges=initWidthEsts,resList=resolutionList,method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=True, useWeights=True, skew0=-2)
 
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''

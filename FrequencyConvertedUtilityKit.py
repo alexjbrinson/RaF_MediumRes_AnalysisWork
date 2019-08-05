@@ -155,7 +155,7 @@ def fitScanX(scanFrame, mass, scan, peaksList, peakRanges=np.array([]), resList=
     (fitRes, warningStatus) = fitNPeaks(datFrame, peaksList, peakRanges=peakRanges, useWeights=useWeights, sameSkew=sameSkew)#add other opts?
     if warningStatus == -1:
       print("That's it for this scan, boys. Don't. push. these peaks. They're. close. to. the. eeeedge. (One of the peaks is leaking out of the scan window at rebin setting%d)"%r)
-      return(compiledGoFs[:r-minR], compiledCenterEsts[:r-minR])
+      return(compiledGoFs[:i], compiledCenterEsts[:i])
     if not os.path.exists('./FitResults/Mass%dFits/Scan%dFits'%(mass,scan)): os.makedirs('./FitResults/Mass%dFits/Scan%dFits'%(mass,scan))
     fitReportFile = open('./FitResults/Mass%dFits/Scan%dFits/Mass%dScan%d_%dbins_FitReport.txt'%(mass,scan,mass,scan,len(datFrame.index)),'w+')
     fitReportFile.write(fitRes.fit_report(min_correl=0.25)); fitReportFile.close()
@@ -241,9 +241,9 @@ def MultiBinSpreadPlotter(mass, scan, ccex, resList):
   #vLinePlotter(vlineArrayDELTA52, r'$^2\Delta_{5/2}$')
 
   if not os.path.exists('./FitResults/Mass%dFits/Scan%dFits/'%(mass,scan)): os.makedirs('./FitResults/Mass%dFits/Scan%dFits'%(mass,scan))
-  plt.savefig('./FitResults/Mass%dFits/Scan%dFits/CenterParametersEstimateSpread_Mass%dScan%d_%dPeaks.png'%(mass,scan,mass,scan,N), bbox_extra_artists=(lgd,), bbox_inches='tight')
+  plt.savefig('./FitResults/Mass%dFits/Scan%dFits/CenterParametersEstimateSpread_Mass%dScan%d_%dPeaks.png'%(mass,scan,mass,scan,len(ccex[0,:,0])), bbox_extra_artists=(lgd,), bbox_inches='tight')
   if not os.path.exists('./FitResults/RebinDependencePlots/'): os.makedirs('./FitResults/RebinDependencePlots/')
-  plt.savefig('./FitResults/RebinDependencePlots/CenterParametersEstimateSpread_Mass%dScan%d_%dPeaks.png'%(mass,scan,N), bbox_extra_artists=(lgd,), bbox_inches='tight')
+  plt.savefig('./FitResults/RebinDependencePlots/CenterParametersEstimateSpread_Mass%dScan%d_%dPeaks.png'%(mass,scan,len(ccex[0,:,0])), bbox_extra_artists=(lgd,), bbox_inches='tight')
   plt.close(2)
 
 def weightedStatistics(dataVals, dataSigs, transitionLabel="'this'"):
@@ -265,8 +265,7 @@ def weightedStatistics(dataVals, dataSigs, transitionLabel="'this'"):
     weightedError=math.sqrt(statistVar)
   return((weightedMean, weightedError))
 
-def Scanalyzer(m, s, peakList=[13285,13278.8,13272.8,13266.57], peakRanges=np.array([]), resList=[.01,.02,.05,.1,.2,.5], method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=False, useWeights=True,skew0=float('NaN')):
-  rbin = maxR #initial bin settings
+def Scanalyzer(m, s, rewrite=False, peakList=[13285,13278.8,13272.8,13266.57], peakRanges=np.array([]), resList=[.01,.02,.05,.1,.2,.5], method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=False, useWeights=True,skew0=float('NaN')):
   print("Running Scanalyzer. scan =",s)
   initCenterEsts=[13285,13278.8,13272.8,13266.57]#,13260]
   initWidthEsts=2*np.ones_like(initCenterEsts)
@@ -289,7 +288,7 @@ def Scanalyzer(m, s, peakList=[13285,13278.8,13272.8,13266.57], peakRanges=np.ar
     #print("test: weightStats = ", weightStats)
     finalScanEstimates[p,0] = weightStats[0]; finalScanEstimates[p,1] = weightStats[1]
   print("Also test: finalScanEstimates.shape=",finalScanEstimates.shape," finalScanEstimates:\n",finalScanEstimates)
-  if not os.path.exists('./FitResults/OutputFiles/mass%d/'%(m)): os.mkdir('./FitResults/OutputFiles/mass%d/'%(m))
+  if not os.path.exists('./FitResults/OutputFiles/mass%d/'%(m)): os.makedirs('./FitResults/OutputFiles/mass%d/'%(m))
   xFile=open("./FitResults/OutputFiles/Mass%d/Mass%dScan%dCompiledFitEstimates.txt"%(m,m,s),'w+')
   xFile.write("#Compiled Fit Center Estimates:\n"+str(ccex))
   xFile.write("\n#Scanalyzer Final Estimates:\n"+str(finalScanEstimates[:,0])+"\n#1Sigma:\n"+str(finalScanEstimates[:,1])+"\n#Range:\n"+str(finalScanEstimates[:,2]))

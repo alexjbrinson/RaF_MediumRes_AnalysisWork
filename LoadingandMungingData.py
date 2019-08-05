@@ -122,9 +122,28 @@ def makeScanToWavemeterDic(mass, verbose=False, redo=False):
   if verbose: print("mass: %d  wavemeter Dictionary:\n"%mass, wavemeterDic)
   return(wavemeterDic)
 
-def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=True, glitchMitigation=False):
+#def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=True, glitchMitigation=False):
+def rawDatPrep(*args, **kwds):  
+  keyLabels = ["verbose", "cleanWM", "glitchMitigation"]
+  keyParms = [False,True,False] # assigning default values for keyword args
+  for i in range(len(keyParms)):
+    if keyLabels[i] in kwds.keys():
+      keyParms[i] = kwds[str(keyLabels[i])] #...why does everything have to be complicated?
+      print("this works!"+str(keyLabels[i])+" = ", keyParms[i])
+  [verbose, cleanWM, glitchMitigation] = keyParms
+  print("keyParms:", keyParms)
+  if len(args)==3:
+    print("TEST. args:", args, "\nkwds?\n",kwds)
+    (mass, scanInd, wavenumber) = args
+  elif len(args)==2:
+    (mass, scanInd) = args
+    allScansBigDic = {}
+    for mVal in [241,242,243,244,245,247]:
+      allScansBigDic[mVal] = makeScanToWavemeterDic(mVal, redo=False, verbose=True)
+    wavenumber = 'pdl' if allScansBigDic[mass][str(scanInd)] == 'pdl' else int(allScansBigDic[mass][str(scanInd)])
+  else: print("yo wtf are you doing?"); quit()
   #TODO: function description
-  mass = m
+  print("TEST. args:", args, "\nkwds?\n",kwds)
   scanIndex = scanInd
   wmNum = wavenumber
   wavenumberToUse = "wavenumber_"+str(wmNum)
@@ -139,8 +158,8 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=True, glitchMitiga
       iscool_colNames = ['timestamp', 'offset', 'voltage']
       ic = pd.read_csv(scanDir + "iscool_ds.csv", sep=';', names=iscool_colNames)
       #betaFunc = np.vectorize(computeBeta, excluded=['m'])
-      ic['betaVals'] = ic['voltage'].map(lambda V: computeBeta(m, V))
-      ic['dopplerShiftFactor'] = ic['voltage'].map(lambda V: dopplerCorrectionFactor(m, V))
+      ic['betaVals'] = ic['voltage'].map(lambda V: computeBeta(mass, V))
+      ic['dopplerShiftFactor'] = ic['voltage'].map(lambda V: dopplerCorrectionFactor(mass, V))
       ic[['voltage','betaVals','dopplerShiftFactor']] = ic[['voltage','betaVals','dopplerShiftFactor']].apply(pd.to_numeric,downcast='float')
       ic=ic[pd.notna(ic['timestamp'])]
       scanDataDic['has_iscool'] = True #I want to call this bool ['is_cool'], but I guess I'll be informative instead :(
@@ -245,7 +264,7 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=True, glitchMitiga
           isCoolVoltage = np.loadtxt('../RaF_RawData/'+str(mass)+'/scan_'+str(nextScan)+'/iscool_ds.csv',delimiter=';',max_rows=1)[-1]
           print("Using Scan %d initial isCool reading; Voltage=%d"%(nextScan, isCoolVoltage))
           #nextIsCool.close()
-          dcf = dopplerCorrectionFactor(m, isCoolVoltage)
+          dcf = dopplerCorrectionFactor(mass, isCoolVoltage)
           print("dcf=%.4f"%dcf)
           #mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*dcf#FOUND ERROR IN PAPER
           mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]/dcf
@@ -356,7 +375,7 @@ if __name__ == '__main__':
   print("test11:\n", output)
   plotData(output, mass, scanIndex, wmNum, nBins=numBins)"""
 
-  doEverything(242, 2426, 1, cleanWM=True, makePlot=True, resolution=.1, verbose=True)
+  doEverything(245, 2310, 2, cleanWM=True, makePlot=True, resolution=.1, verbose=True)
 
     
   #New merging thing?
