@@ -12,59 +12,29 @@ from lmfit import Model, Parameter
 from lmfit.models import SkewedVoigtModel, LinearModel, GaussianModel, LorentzianModel
 import emcee"""
 
+
+"""
+def vLinePlotter(vlineArray, transitionLabel, reflections=False, numericLabels=False):
+  for i in range(len(vlineArray)):
+    plt.axvline(vlineArray[i],0,1, color='k', linestyle='dashed', linewidth=1, alpha=.75)
+    if numericLabels:
+      plt.annotate(s=vlabelArray[i]+"\n"+str(vlineArray[i]), xy=(vlineArray[i],.8), fontsize=8, ha='center', xycoords=('data','figure fraction'))
+    else:
+      plt.annotate(s=vlabelArray[i], xy=(vlineArray[i],.7+(i%6)/50), fontsize=8, ha='center', xycoords=('data','figure fraction'))
+    if reflections:
+      plt.axvline(vlineArray[i]-2*beta*gamma*vlineArray[i],0,1, color='r', linestyle='dashed', linewidth=.25, alpha=.75)
+      if numericLabels:
+        plt.annotate(s=vlabelArray[i]+"\nAnticolinear\nReflection\n%.2f"%(vlineArray[i]-2*beta*gamma*vlineArray[i]), xy=(vlineArray[i]-2*beta*gamma*vlineArray[i],.13), fontsize=8, ha='center', xycoords=('data','figure fraction'))
+      else:
+        plt.annotate(s=vlabelArray[i]+"\nReflection", xy=(vlineArray[i]-2*beta*gamma*vlineArray[i],.13), fontsize=8, ha='center', xycoords=('data','figure fraction'))
+  plt.annotate(s=transitionLabel+', P', xy=(np.mean(vlineArray[0:6]), .85), fontsize=14, ha='center', xycoords=('data','figure fraction'))
+  plt.annotate(s=transitionLabel+', Q', xy=(np.mean(vlineArray[6:12]), .8), fontsize=14, ha='center', xycoords=('data','figure fraction'))
+  plt.annotate(s=transitionLabel+', R', xy=(np.mean(vlineArray[12:18]), .85), fontsize=14, ha='center', xycoords=('data','figure fraction'))
+"""
 '''2. "Do the same of the different isotopes 223-228Ra"'''
-def makeScanToWavemeterDic(mass, verbose=False, redo=False):
-  massDir= '../RaF_RawData/'+str(mass)+'/'
-  dirlist=os.listdir(massDir)
-  scanInds = []
-  for scanFolder in dirlist:
-    scanInds.append(int(scanFolder.lstrip('scan_')))
-  if verbose: print("mass%d scanInds: "%mass, scanInds)
-  colorDict={'pdl':"Red", 1:'Green', 2:'Blue', 3:'Purple', 4:'Orange'}
-  wavemeterDic={}
-  if os.path.exists('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass) and (redo==False):
-    with open('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass,'r') as dicFile:
-      wavemeterDic = json.load(dicFile)
-  else:
-    for s in np.sort(scanInds):
-      wavemeterDic[str(s)]=str(lmd.whichWavemeter(mass,s))
-    if not os.path.exists('./wavemeterToUseDictionaries/'):
-      os.mkdir('./wavemeterToUseDictionaries/')
-    with open('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass,'wb') as dicFile:
-      dicFile.write(json.dumps(wavemeterDic,sort_keys=True).encode("utf-8"))
-  if verbose: print("mass: %d  wavemeter Dictionary:\n"%mass, wavemeterDic)
-  return(wavemeterDic)
-
-"""fig1 = plt.figure("Wavenumber Ranges")
-counter=0
-unclearScansExist=False
-for k in np.sort(list(datDic.keys())):
-  datArray = datDic[k]
-  if k in dyeInds:
-    plt.plot(datArray[:,2], counter*np.ones_like(datArray[:,2])+0.0, "r-", alpha=.5, lw=16)
-  elif k in tiSapInds:
-    plt.plot(datArray[:,2], counter*np.ones_like(datArray[:,2]), "b-", alpha=.5, lw=16)
-  else:
-    plt.plot(datArray[:,2], counter*np.ones_like(datArray[:,2]), "g-", alpha=.5, lw=16)
-    unclearScansExist=True
-  plt.text(np.mean(datArray[:,2]), counter+.0, str(k), fontsize=16, horizontalalignment='center', verticalalignment='center')
-  counter+=1
-plt.xlabel(r'Wavenumber (cm$^{-1}$)', fontsize=18)
-plt.ylabel('Index of scan', fontsize=18)
-red_patch = mpatches.Patch(color='red', label="Dye Laser Scans")
-blue_patch = mpatches.Patch(color='blue', label="TiSaph Laser Scans")
-green_patch = mpatches.Patch(color='green', label="Unclear Scans")
-if unclearScansExist: plt.legend(loc=4, handles=[red_patch, blue_patch, green_patch], fontsize=16)
-else: plt.legend(loc=4, handles=[red_patch, blue_patch], fontsize=16)
-plt.title(r'Wavenumber Ranges of $^{226}$Ra$^{19}$F LowRes Scans', fontsize=24)
-plt.gcf().set_size_inches(20, 12)
-plt.savefig("ScanWavenumberRanges.png")
-
-for scindex in np.sort(list(datDic.keys())): dataFileComparator(scindex)"""
-
 allScansBigDic = {}
 for m in [241,242,243,244,245,247]:
-  allScansBigDic[m] = makeScanToWavemeterDic(m, redo=False, verbose=True)
+  allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=True)
 
 rewrite=True
 

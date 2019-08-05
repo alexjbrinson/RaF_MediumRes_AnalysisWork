@@ -7,6 +7,7 @@ import csv
 #from matplotlib.widgets import TextBox
 #from matplotlib.widgets import Button
 import os
+import json
 #import os.path
 
 """TODO: A lotta stuff...
@@ -98,6 +99,28 @@ def whichWavemeter(mass, scanInd, verbose=False):
   maxArg = np.argmax(wmRanges)
   thisWavemeter = 'pdl' if maxArg == 0 else maxArg
   return(thisWavemeter)
+
+def makeScanToWavemeterDic(mass, verbose=False, redo=False):
+  massDir= '../RaF_RawData/'+str(mass)+'/'
+  dirlist=os.listdir(massDir)
+  scanInds = []
+  for scanFolder in dirlist:
+    scanInds.append(int(scanFolder.lstrip('scan_')))
+  if verbose: print("mass%d scanInds: "%mass, scanInds)
+  colorDict={'pdl':"Red", 1:'Green', 2:'Blue', 3:'Purple', 4:'Orange'}
+  wavemeterDic={}
+  if os.path.exists('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass) and (redo==False):
+    with open('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass,'r') as dicFile:
+      wavemeterDic = json.load(dicFile)
+  else:
+    for s in np.sort(scanInds):
+      wavemeterDic[str(s)]=str(whichWavemeter(mass,s)) # this strat usually works, but can fail; individual entries are ammended via the .txt file directly. Sue me...
+    if not os.path.exists('./wavemeterToUseDictionaries/'):
+      os.mkdir('./wavemeterToUseDictionaries/')
+    with open('./wavemeterToUseDictionaries/RaF%dWavemeterDictionary.txt'%mass,'wb') as dicFile:
+      dicFile.write(json.dumps(wavemeterDic,sort_keys=True).encode("utf-8"))
+  if verbose: print("mass: %d  wavemeter Dictionary:\n"%mass, wavemeterDic)
+  return(wavemeterDic)
 
 def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=True, glitchMitigation=False):
   #TODO: function description
@@ -244,6 +267,13 @@ def rawDatPrep(m, scanInd, wavenumber, verbose=False, cleanWM=True, glitchMitiga
   del(mfouter)
 
   return(preppedDataFrame)#TODO add in other wavenumber correction thing
+
+"""def rawDatPrep(m, scanInd, verbose=False, cleanWM=True, glitchMitigation=False):
+  allScansBigDic = {}
+  for m in [241,242,243,244,245,247]:
+    allScansBigDic[m] = makeScanToWavemeterDic(m, redo=False, verbose=True)
+  wm = 'pdl' if allScansBigDic[m][str(s)] == 'pdl' else int(allScansBigDic[m][str(s)])
+  return(rawDatPrep(m, scanInd, wm, verbose=verbose, cleanWM=cleanWM, glitchMitigation=glitchMitigation))"""
 
 def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True):
   #converts (usually huge) time-centric dataframes from rawDatPrep() into spectrum-friendly wavenumber-based dataframes
