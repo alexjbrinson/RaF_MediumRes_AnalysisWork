@@ -58,6 +58,6 @@ if __name__ == '__main__':
   plt.xlabel(r'wavenumber ($cm^{-1}$)')
   plt.ylabel('rate (counts/s)')
   plt.title("Q-Band Spectra For Different RaF Isotopes")
-  plt.legend(loc=best)
+  plt.legend(loc='best')
   plt.show()
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''

@@ -138,7 +138,7 @@ def rawDatPrep(*args, **kwds):
     (mass, scanInd) = args
     allScansBigDic = {}
     for mVal in [241,242,243,244,245,247]:
-      allScansBigDic[mVal] = makeScanToWavemeterDic(mVal, redo=False, verbose=True)
+      allScansBigDic[mVal] = makeScanToWavemeterDic(mVal, redo=False, verbose=False)
     wavenumber = 'pdl' if allScansBigDic[mass][str(scanInd)] == 'pdl' else int(allScansBigDic[mass][str(scanInd)])
   else: print("yo wtf are you doing?"); quit()
   #TODO: function description
