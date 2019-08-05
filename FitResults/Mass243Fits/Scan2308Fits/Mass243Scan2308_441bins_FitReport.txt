@@ -1,0 +1,31 @@
+[[Model]]
+    ((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 22004
+    # data points      = 441
+    # variables        = 10
+    chi-square         = 0.11419655
+    reduced chi-square = 2.6496e-04
+    Akaike info crit   = -3622.16568
+    Bayesian info crit = -3581.27523
+##  Warning: uncertainties could not be estimated:
+    sv0_skew:       at boundary
+    sv1_center:     at initial value
+[[Variables]]
+    l0_intercept:  -9138.21455 (init = 89.25233)
+    l0_slope:       0.69664207 (init = 0)
+    sv0_skew:      -12.0000000 (init = -2)
+    sv0_sigma:      1.28455788 (init = 0.8)
+    sv0_amplitude:  122.916696 (init = 285.1676)
+    sv0_center:     13272.6660 (init = 13272.5)
+    sv0_gamma:      0.73885842 (init = 1.5)
+    sv0_height:     38.1739663 == '0.3989423*sv0_amplitude/max(1.e-15, sv0_sigma)'
+    sv0_fwhm:       4.62609114 == '3.6013100*sv0_sigma'
+    sv1_skew:      -12.0000000 == 'sv0_skew'
+    sv1_sigma:      0.10047325 (init = 0.8)
+    sv1_amplitude:  23.7683677 (init = 145.7465)
+    sv1_center:     13266.4848 (init = 13266.6)
+    sv1_gamma:      0.73885842 == 'sv0_gamma'
+    sv1_height:     94.3754449 == '0.3989423*sv1_amplitude/max(1.e-15, sv1_sigma)'
+    sv1_fwhm:       0.36183530 == '3.6013100*sv1_sigma'

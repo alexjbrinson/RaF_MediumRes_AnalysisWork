@@ -129,11 +129,10 @@ def rawDatPrep(*args, **kwds):
   for i in range(len(keyParms)):
     if keyLabels[i] in kwds.keys():
       keyParms[i] = kwds[str(keyLabels[i])] #...why does everything have to be complicated?
-      print("this works!"+str(keyLabels[i])+" = ", keyParms[i])
+      #print("this works!"+str(keyLabels[i])+" = ", keyParms[i])
   [verbose, cleanWM, glitchMitigation] = keyParms
-  print("keyParms:", keyParms)
+  #print("keyParms:", keyParms)
   if len(args)==3:
-    print("TEST. args:", args, "\nkwds?\n",kwds)
     (mass, scanInd, wavenumber) = args
   elif len(args)==2:
     (mass, scanInd) = args
@@ -143,7 +142,7 @@ def rawDatPrep(*args, **kwds):
     wavenumber = 'pdl' if allScansBigDic[mass][str(scanInd)] == 'pdl' else int(allScansBigDic[mass][str(scanInd)])
   else: print("yo wtf are you doing?"); quit()
   #TODO: function description
-  print("TEST. args:", args, "\nkwds?\n",kwds)
+  #print("TEST. args:", args, "\nkwds?\n",kwds)
   scanIndex = scanInd
   wmNum = wavenumber
   wavenumberToUse = "wavenumber_"+str(wmNum)
@@ -294,7 +293,7 @@ def rawDatPrep(*args, **kwds):
   wm = 'pdl' if allScansBigDic[m][str(s)] == 'pdl' else int(allScansBigDic[m][str(s)])
   return(rawDatPrep(m, scanInd, wm, verbose=verbose, cleanWM=cleanWM, glitchMitigation=glitchMitigation))"""
 
-def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True):
+def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True, normalize=False):
   #converts (usually huge) time-centric dataframes from rawDatPrep() into spectrum-friendly wavenumber-based dataframes
   kVals = np.array(df.loc[:,"wavenumber"]); kRange=max(kVals)-min(kVals)
   print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
@@ -335,6 +334,13 @@ def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=Tr
       e-=1
     outputDF = outputDF.iloc[i:e,:]
   outputDF.reset_index(drop=True, inplace=True)
+  
+  if normalize == True:
+    sigTot = np.sum(outputDF.loc[:,'signal_value'])
+    print("test: sigTot=", sigTot)
+    outputDF['signal_value']=outputDF['signal_value']/sigTot
+    outputDF['signal_uncertainty']=outputDF['signal_uncertainty']/sigTot
+
   return(outputDF)
 
 def plotData(output, m, scanInd, wavenumber, nBins=-1, resolution=-1):
