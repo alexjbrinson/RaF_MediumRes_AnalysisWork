@@ -178,7 +178,6 @@ def rawDatPrep(*args, **kwds):
       wm_colNames = ['timestamp', 'offset', 'wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']
       wm = pd.read_csv(scanDir + "wavemeter_ds.csv", sep=';', names=wm_colNames)
       wm=wm[pd.notna(wm['timestamp'])]
-      #if (cleanWM == True and wavenumber in [1,2,3,4]): wm = wavemeterDataCleaner(wm, wavenumberToUse) #August4/2019, going to try cleaning wm data later, as I don't want my cropping to affect count rates of correct wm measurements
       wm[['wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']] = wm[['wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']].apply(pd.to_numeric,downcast='float')
       scanDataDic['has_wavemeter'] = True  
 
@@ -236,12 +235,14 @@ def rawDatPrep(*args, **kwds):
   #mfouter = mfouter[pd.notna(mfouter['timestamp'])]#4/Aug/2019. For Mass242, scan 2512, this is for some reason necessary. Looks like garbage timestamp in tagger file
 
   if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse]])
-  tStamps = np.array(mfouter.loc[:,'timestamp']); tDiffs = tStamps[1:]-tStamps[:-1]; print('np.mean(tDiffs) = ',np.mean(tDiffs)); assert(np.mean(tDiffs)<1) #If assertion fails, average tDiff is larger than I'd been expecting... Maybe take a look at this.
+  tStamps = np.array(mfouter.loc[:,'timestamp']); tDiffs = tStamps[1:]-tStamps[:-1]; 
+  if verbose: print('np.mean(tDiffs) = ',np.mean(tDiffs));
+  assert(np.mean(tDiffs)<1) #If assertion fails, average tDiff is larger than I'd been expecting... Maybe take a look at this.
   mfouter.loc[0:,'timeDiffs'] = pd.Series(np.append(np.mean(tDiffs),tDiffs), index=mfouter.index[0:]) #appending mean timeDiff at front, bc I don't want the first bunch/s rate to be infinite
   
   if cleanWM==True: #August4/2019, this is my new wavemeter cleaning implementation
     mfouter[wavenumberToUse]=mfouter[wavenumberToUse].map(lambda v: v if v > 0 else float('NaN'))
-    mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
+    mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]
 
   if scanDataDic['has_iscool'] == True:
     #mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*mfouter.loc[:, 'dopplerShiftFactor'] #FOUND ERROR IN PAPER
@@ -286,20 +287,20 @@ def rawDatPrep(*args, **kwds):
 
   return(preppedDataFrame)#TODO add in other wavenumber correction thing
 
-"""def rawDatPrep(m, scanInd, verbose=False, cleanWM=True, glitchMitigation=False):
-  allScansBigDic = {}
-  for m in [241,242,243,244,245,247]:
-    allScansBigDic[m] = makeScanToWavemeterDic(m, redo=False, verbose=True)
-  wm = 'pdl' if allScansBigDic[m][str(s)] == 'pdl' else int(allScansBigDic[m][str(s)])
-  return(rawDatPrep(m, scanInd, wm, verbose=verbose, cleanWM=cleanWM, glitchMitigation=glitchMitigation))"""
+def mergeDatRaw(mass, scanList,verbose=False):
+  #creates dataframe of same format as rawDatPrep(), but combining multiple scans
+  dfList=[]
+  for scan in scanList:
+    dfList.append(rawDatPrep(mass,scan))
+  return(pd.concat(dfList))
 
-def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True, normalize=False):
+def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True, normalizedOn=False,ltrim=0,rtrim=0, verbose=True):
   #converts (usually huge) time-centric dataframes from rawDatPrep() into spectrum-friendly wavenumber-based dataframes
   kVals = np.array(df.loc[:,"wavenumber"]); kRange=max(kVals)-min(kVals)
-  print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
+  if verbose: print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
   if resolution<0: binQuant = nBins
   else: binQuant = math.ceil(kRange/resolution)
-  print("TESTSTSSTSTS: numBins=%d"%binQuant)
+  if verbose: print("TESTSTSSTSTS: numBins=%d"%binQuant)
   df.loc[:,'waveProds'] = df.loc[:,'wavenumber']*df.loc[:,'timeDiffs']
   kBins = pd.cut(df.loc[:,"wavenumber"], bins=binQuant)#, retbins=True)
 
@@ -320,10 +321,16 @@ def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=Tr
   outputDF.sort_values('wavenumber_mean',inplace=True)
   if noNaNsense:
     outputDF = outputDF.dropna(how='any',axis=0)
-  if cropSparseEnds and binQuant>3:
+  if ltrim>0:
+    outputDF['wavenumber_mean']=outputDF['wavenumber_mean'].map(lambda v: v if v > ltrim else float('NaN'))
+    outputDF = outputDF[pd.notna(outputDF['wavenumber_mean'])]
+  if rtrim>0:
+    outputDF['wavenumber_mean']=outputDF['wavenumber_mean'].map(lambda v: v if v < rtrim else float('NaN'))
+    outputDF = outputDF[pd.notna(outputDF['wavenumber_mean'])]
+  if cropSparseEnds and len(outputDF['wavenumber_mean'])>3:
     dRay = np.array(outputDF.dropna(how='any',axis=0, inplace=False).loc[:,'wavenumber_mean'])
     meanSpacing = np.mean(dRay[1:]-dRay[:-1])
-    print("crop check: meanSpacing=%f"%meanSpacing)
+    if verbose: print("crop check: meanSpacing=%f"%meanSpacing)
     i = 0 #cropping left
     while (dRay[i+1]-dRay[i]>3*meanSpacing) or (dRay[i+2]-dRay[i+1]>3*meanSpacing) or (dRay[i+3]-dRay[i+2]>3*meanSpacing):
     # If the any of the next 3 v-spacings are greater than 3 times the average spacing, increment the index at which to start cropping.
@@ -333,13 +340,17 @@ def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=Tr
     # If the any of the preceding 3 v-spacings are greater than 3 times the average spacing, increment the index at which to start cropping(?)
       e-=1
     outputDF = outputDF.iloc[i:e,:]
-  outputDF.reset_index(drop=True, inplace=True)
-  
-  if normalize == True:
+  if normalizedOn == "Integral":
     sigTot = np.sum(outputDF.loc[:,'signal_value'])
     print("test: sigTot=", sigTot)
     outputDF['signal_value']=outputDF['signal_value']/sigTot
     outputDF['signal_uncertainty']=outputDF['signal_uncertainty']/sigTot
+  elif normalizedOn=="MaxValue":
+    maxVal = np.max(outputDF.loc[:,'signal_value'])
+    print("test: maxVal=", maxVal)
+    outputDF['signal_value']=outputDF['signal_value']/maxVal
+    outputDF['signal_uncertainty']=outputDF['signal_uncertainty']/maxVal
+  outputDF.reset_index(drop=True, inplace=True)
 
   return(outputDF)
 
@@ -354,10 +365,13 @@ def plotData(output, m, scanInd, wavenumber, nBins=-1, resolution=-1):
   plt.xlabel(r'wavenumber ($cm^{-1}$)')
   plt.ylabel('rate (counts/s)') #TODO: determine unit on timestamp
 
-def fileWriter(output, m, scanInd):
+def fileWriter(output, m, scanInd, target='NaN'):
   if not os.path.exists('./FrequencyConvertedDatasets/%d'%m):
     os.mkdir('./FrequencyConvertedDatasets/%d'%m)
-  output.to_csv(path_or_buf='./FrequencyConvertedDatasets/%d/scan_%d.csv'%(m, scanInd), sep=',', float_format='%.11f', columns=['signal_uncertainty','wavenumber_mean','signal_value'], index=True, header=['error','freq','rate'])
+  if target=="NaN":
+    output.to_csv(path_or_buf='./FrequencyConvertedDatasets/%d/scan_%d.csv'%(m, scanInd), sep=',', float_format='%.11f', columns=['signal_uncertainty','wavenumber_mean','signal_value'], index=True, header=['error','freq','rate'])
+  else:
+    output.to_csv(path_or_buf=target, sep=',', float_format='%.11f', columns=['signal_uncertainty','wavenumber_mean','signal_value'], index=True, header=['error','freq','rate'])
 
 def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=False, makePlot=False, cleanWM=True, verbose=False, cropSparseEnds=True, noNaNsense=True):
   mfba =  rawDatPrep(m, scanInd, wavenumber, verbose=verbose, cleanWM=cleanWM)
@@ -381,7 +395,7 @@ if __name__ == '__main__':
   print("test11:\n", output)
   plotData(output, mass, scanIndex, wmNum, nBins=numBins)"""
 
-  doEverything(245, 2310, 2, cleanWM=True, makePlot=True, resolution=.1, verbose=True)
+  doEverything(247, 2322, 2, cleanWM=True, makePlot=True, resolution=.01, verbose=True)
 
     
   #New merging thing?

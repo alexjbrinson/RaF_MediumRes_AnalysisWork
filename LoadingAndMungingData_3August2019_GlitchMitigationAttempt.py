@@ -272,7 +272,7 @@ def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=F
 if __name__ == '__main__':
   
   mass = 245
-  scanIndex = 2178#2324
+  scanIndex = 2322#2178#2324
   wmNum = 2#'pdl'
   numBins = 280
 

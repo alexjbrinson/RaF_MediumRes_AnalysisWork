@@ -80,7 +80,7 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
       print("Just a heads up, you input a list of distinct skew values, but sameSkew==True, so the first skew value will be used for each peak. Set sameSkew to False if you dislike this.")
       skewList=skewList[0]*np.ones_like(skewList)
   #if sameSkew: skewList=skewList[0]*np.ones_like(skewList)
-  print("test: skewList:",skewList,"\npeaksList:",peaksList)
+  #print("test: skewList:",skewList,"\npeaksList:",peaksList)
   xDat = np.array(datFrame.loc[:,'wavenumber_mean']); yDat = np.array(datFrame.loc[:,'signal_value']); ySigDat = np.array(datFrame.loc[:,'signal_uncertainty'])
   xRange = np.max(xDat) - np.min(xDat); yRange = np.max(yDat) - np.min(yDat)
   bg = backgroundEstimator(yDat)
@@ -93,12 +93,12 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
   for i in range(N):
     #print("Adding peak%d to model fit. center at %.2f"%(i,peaksList[i]))
     k = peaksList[i]; sigmaK = peakSigmas[i] 
-    print("k=%.2f"%k)
+    #print("k=%.2f"%k)
     ind1 = np.argmin(abs(xDat-k))
-    print("ind1=%d"%ind1)
+    #print("ind1=%d"%ind1)
     ind2 = np.argmax(yDat[ind1-2:ind1+3])+ind1-2
     estimHeight = yDat[ind2] - bg
-    print("testing estims... bg=%d, i=%d, k=%.2f, ind1=%d, ind2=%d, xDat[ind2]=%.2f, yDat[ind2=]%.2f, estimHeight=%.2f"%(bg, i,k,ind1,ind2,xDat[ind2],yDat[ind2],estimHeight))
+    #print("testing estims... bg=%d, i=%d, k=%.2f, ind1=%d, ind2=%d, xDat[ind2]=%.2f, yDat[ind2=]%.2f, estimHeight=%.2f"%(bg, i,k,ind1,ind2,xDat[ind2],yDat[ind2],estimHeight))
     if ind1 <= 3 or len(xDat)-ind1<=3:
       print("WARNING: Peak occurs too closely to edge of dataset. A lower rebin setting is recommended.")
       warningStatus=-1
@@ -112,7 +112,7 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
       estimHeight = max(estimHeight,estimHeight2)
     amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
     height1=amp*special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real/(peakSigmas[i]*math.sqrt(2*math.pi))
-    print("testing math stuff... amp=%.2f; height=%.2f"%(amp,height1))
+    #print("testing math stuff... amp=%.2f; height=%.2f"%(amp,height1))
     svmod = SkewedVoigtModel(prefix="sv"+str(i)+"_")
     svmod.set_param_hint('center', value=peaksList[i], min=max(peaksList[i]-2*peakSigmas[i], xDat[3]), max=min(peaksList[i]+2*peakSigmas[i],xDat[-3]))
     svmod.set_param_hint('sigma', value=peakSigmas[i], min=0.1, max=2*peakSigmas[i])
@@ -235,7 +235,7 @@ def MultiBinSpreadPlotter(mass, scan, ccex, resList):
   for p in range(len(ccex[0,:,0])):
     plt.gca().add_patch(Rectangle((finScanEsts[p,0]-3*finScanEsts[p,1], yVals[0]-1), 6*finScanEsts[p,1], yVals[-1]+1, color=colorCoding[p], alpha=.25))
     plt.axvline(finScanEsts[p,0], ymin=0, ymax=1, color=colorCoding[p], linestyle='--')
-    print("test: len(ccex[:,p,0])=%d ; len(yVals)=%d"%(len(ccex[:,p,0]), len(yVals)) )
+    #print("test: len(ccex[:,p,0])=%d ; len(yVals)=%d"%(len(ccex[:,p,0]), len(yVals)) )
     plt.errorbar(ccex[:,p,0], yVals, xerr=ccex[:,p,1], fmt='o', color=colorCoding[p], markeredgecolor='black', markersize=7, label="Peak %d"%(p+1))
     #TODO: plt.errorbar()
     #plt.annotate(r'$\chi^2_{red} = %.2f$'%cfrx[r-1,p-1], xy=(ccex[r,p][-1], r-.3), fontsize=8, ha='center', xycoords=('data','data'))
@@ -281,8 +281,8 @@ def weightedStatistics(dataVals, dataSigs, transitionLabel="'this'"):
 
 def Scanalyzer(m, s, rewrite=False, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np.array([]),initGamma=1, resList=[.01,.02,.05,.1,.2,.5], method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=False, useWeights=True,skew0=float('NaN')):
   print("Running Scanalyzer. scan =",s)
-  initCenterEsts=[13285,13278.8,13272.8,13266.57]#,13260]
-  initWidthEsts=2*np.ones_like(initCenterEsts)
+  initCenterEsts=peakList
+  initWidthEsts=peakSigmas
   resolutionList=[.01,.02,.05,.1,.2,.5]
   N = len(initCenterEsts)
   if (os.path.exists('./FitResults/Mass%dFits/Scan%dFits/ResultsCompiledForInput_Mass%d_Scan%d_%dPeaks-ccex.txt'%(m,s,m,s,N)) and (rewrite==False)):
@@ -299,7 +299,8 @@ def Scanalyzer(m, s, rewrite=False, peakList=[13285,13278.8,13272.8,13266.57], p
     weightStats = weightedStatistics(ccex[:,p,0], ccex[:,p,1])
     #print("test: weightStats = ", weightStats)
     finalScanEstimates[p,0] = weightStats[0]; finalScanEstimates[p,1] = weightStats[1]
-  print("Also test: finalScanEstimates.shape=",finalScanEstimates.shape," finalScanEstimates:\n",finalScanEstimates)
+  #print("Also test: finalScanEstimates.shape=",finalScanEstimates.shape," finalScanEstimates:\n",finalScanEstimates)
+  print("finalScanEstimates:\n",finalScanEstimates)
   if not os.path.exists('./FitResults/OutputFiles/mass%d/'%(m)): os.makedirs('./FitResults/OutputFiles/mass%d/'%(m))
   xFile=open("./FitResults/OutputFiles/Mass%d/Mass%dScan%dCompiledFitEstimates.txt"%(m,m,s),'w+')
   xFile.write("#Compiled Fit Center Estimates:\n"+str(ccex))

@@ -1,0 +1,71 @@
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 291
+    # data points      = 380
+    # variables        = 16
+    chi-square         = 0.01503389
+    reduced chi-square = 4.1302e-05
+    Akaike info crit   = -3820.29549
+    Bayesian info crit = -3757.25275
+[[Variables]]
+    l0_slope:       0.00823601 +/- 0.01219475 (148.07%) (init = 0)
+    l0_intercept:  -60.3334039 +/- 161.780934 (268.14%) (init = 47.39937)
+    sv0_center:     13284.8511 +/- 0.02095991 (0.00%) (init = 13285)
+    sv0_skew:      -4.53079680 +/- 1.02275537 (22.57%) (init = -2)
+    sv0_sigma:      0.99177456 +/- 0.17041621 (17.18%) (init = 0.8)
+    sv0_amplitude:  250.217040 +/- 6.90545454 (2.76%) (init = 268.7638)
+    sv0_gamma:      1.63070908 +/- 0.12780068 (7.84%) (init = 1.5)
+    sv0_height:     100.650052 +/- 19.0260339 (18.90%) == '0.3989423*sv0_amplitude/max(1.e-15, sv0_sigma)'
+    sv0_fwhm:       3.57168764 +/- 0.61372159 (17.18%) == '3.6013100*sv0_sigma'
+    sv1_center:     13278.6886 +/- 0.02637207 (0.00%) (init = 13278.8)
+    sv1_skew:      -4.53079680 +/- 1.02275537 (22.57%) == 'sv0_skew'
+    sv1_sigma:      0.81913636 +/- 0.19587562 (23.91%) (init = 0.8)
+    sv1_amplitude:  121.997438 +/- 4.00097823 (3.28%) (init = 170.1367)
+    sv1_gamma:      1.63070908 +/- 0.12780068 (7.84%) == 'sv0_gamma'
+    sv1_height:     59.4161618 +/- 14.4090325 (24.25%) == '0.3989423*sv1_amplitude/max(1.e-15, sv1_sigma)'
+    sv1_fwhm:       2.94996396 +/- 0.70540884 (23.91%) == '3.6013100*sv1_sigma'
+    sv2_center:     13272.6034 +/- 0.03452574 (0.00%) (init = 13272.8)
+    sv2_skew:      -4.53079680 +/- 1.02275537 (22.57%) == 'sv0_skew'
+    sv2_sigma:      0.89377637 +/- 0.21028378 (23.53%) (init = 0.8)
+    sv2_amplitude:  53.7365279 +/- 2.17752443 (4.05%) (init = 93.91166)
+    sv2_gamma:      1.63070908 +/- 0.12780068 (7.84%) == 'sv0_gamma'
+    sv2_height:     23.9856129 +/- 5.54661102 (23.12%) == '0.3989423*sv2_amplitude/max(1.e-15, sv2_sigma)'
+    sv2_fwhm:       3.21876578 +/- 0.75729707 (23.53%) == '3.6013100*sv2_sigma'
+    sv3_center:     13266.6019 +/- 0.43260024 (0.00%) (init = 13266.57)
+    sv3_skew:      -4.53079680 +/- 1.02275537 (22.57%) == 'sv0_skew'
+    sv3_sigma:      0.10000043 +/- 0.30151021 (301.51%) (init = 0.8)
+    sv3_amplitude:  14.8213594 +/- 3.53257680 (23.83%) (init = 45.27383)
+    sv3_gamma:      1.63070908 +/- 0.12780068 (7.84%) == 'sv0_gamma'
+    sv3_height:     59.1284162 +/- 190.564174 (322.29%) == '0.3989423*sv3_amplitude/max(1.e-15, sv3_sigma)'
+    sv3_fwhm:       0.36013256 +/- 1.08583173 (301.51%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(l0_slope, l0_intercept)    = -1.000
+    C(sv3_center, sv3_sigma)     = -0.986
+    C(sv0_skew, sv0_sigma)       = -0.895
+    C(sv3_sigma, sv3_amplitude)  = -0.862
+    C(sv3_center, sv3_amplitude) =  0.855
+    C(sv0_sigma, sv0_gamma)      = -0.851
+    C(sv0_sigma, sv1_sigma)      =  0.816
+    C(sv0_skew, sv1_sigma)       = -0.812
+    C(sv0_gamma, sv1_sigma)      = -0.810
+    C(sv0_sigma, sv2_sigma)      =  0.770
+    C(sv0_gamma, sv2_sigma)      = -0.765
+    C(sv0_skew, sv2_sigma)       = -0.755
+    C(sv0_skew, sv0_gamma)       =  0.742
+    C(sv1_sigma, sv2_sigma)      =  0.712
+    C(sv0_amplitude, sv0_gamma)  =  0.699
+    C(sv0_sigma, sv0_amplitude)  = -0.574
+    C(sv0_amplitude, sv1_sigma)  = -0.571
+    C(sv0_skew, sv0_amplitude)   =  0.541
+    C(sv0_center, sv0_skew)      = -0.533
+    C(sv0_amplitude, sv2_sigma)  = -0.518
+    C(sv0_center, sv0_sigma)     =  0.440
+    C(sv2_center, sv2_sigma)     =  0.398
+    C(sv0_center, sv1_sigma)     =  0.339
+    C(sv1_center, sv1_sigma)     =  0.324
+    C(sv0_center, sv2_sigma)     =  0.310
+    C(sv0_skew, sv2_center)      = -0.309
+    C(sv0_skew, sv1_center)      = -0.301
+    C(sv0_sigma, sv2_center)     =  0.280

@@ -27,19 +27,16 @@ if __name__ == '__main__':
   massScanDic[242]=[2312, 2313]
   massScanDic[243]=[2283,2301,2302,2303,2308]#2300?
   massScanDic[244]=[2304,2305,2306,2307]
-
-  massScanDic[245]=[2309,2310,2320]
-  massScanDic[247]=[2188,2190,2311]
+  massScanDic[245]=[2178,2309,2310,2320,2341,2349,2350,2346]#2346 is a pdl scan though. gross...
+  massScanDic[247]=[2311,2322]#,2188,2190]
   initCenterEsts=[13285,13278.8,13272.8,13266.57]#,13260]
   sigmaEst=.8
   gammaEst=1.5
   resolutionList=[.01,.02,.05,.1,.2,.5]
 
   for m in massList:
-    isoFrames = []
     for s in massScanDic[m]:
       print("m=%d, s=%d")
-      """
       if (s in [2312,2313,2283]): peakList = initCenterEsts
       elif (s in [2301,2302,2303]): peakList = [13284.7,13278.2,13272.8]
       elif s==2308: peakList=[13272.5,13266.6]
@@ -49,15 +46,14 @@ if __name__ == '__main__':
       elif s==2311: peakList = initCenterEsts
       else: peakList=initCenterEsts
       FCUK.Scanalyzer(m,s,rewrite=False,peakList=peakList,peakSigmas=sigmaEst*np.ones_like(peakList),initGamma=gammaEst,resList=resolutionList,method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=True, useWeights=True, skew0=-2)
-      """
-      isoFrames.append(lmd.rawDatPrep(m,s))
-    isotopeData=pd.concat(isoFrames)
-    isoDope=lmd.makeUseable(isotopeData, resolution=.1, normalize=True)
-    plt.errorbar(x=isoDope.loc[:,'wavenumber_mean'], y=isoDope.loc[:,'signal_value'], yerr=isoDope.loc[:,'signal_uncertainty'], fmt=".-",color=colorDict[m],ecolor='k', alpha=.5, label=r'$^{%d}$Ra$^{19}$F'%(m-19))
-  plt.gcf().set_size_inches(20, 12)
-  plt.xlabel(r'wavenumber ($cm^{-1}$)')
-  plt.ylabel('rate (counts/s)')
-  plt.title("Q-Band Spectra For Different RaF Isotopes")
-  plt.legend(loc='best')
-  plt.show()
+    (cfrx,ccex) = FCUK.fitScanX(lmd.mergeDatRaw(m,massScanDic[m]),m,0, initCenterEsts, peakSigmas=sigmaEst*np.ones_like(initCenterEsts), initGamma=gammaEst, resList=resolutionList, makePlots=True, useWeights=True, sameSkew=True, skew0=-2)
+    FCUK.MultiBinSpreadPlotter(m,0,ccex,resolutionList)
+    finalScanEstimates = np.c_[np.mean(ccex[:,:,0], axis=0), np.std(ccex[:,:,0], axis=0), np.max(ccex[:,:,0], axis=0)-np.min(ccex[:,:,0], axis=0)]
+    #print("finalScanEstimates.shape=",finalScanEstimates.shape,"\nfinalScanEstimates:\n",finalScanEstimates)
+    #finalScanEsts = np.copy(finalScanEstimates)
+    for p in range(len(ccex[0,:,0])):
+      weightStats = FCUK.weightedStatistics(ccex[:,p,0], ccex[:,p,1])
+      #print("test: weightStats = ", weightStats)
+      finalScanEstimates[p,0] = weightStats[0]; finalScanEstimates[p,1] = weightStats[1]
+    print("mass%d, combined scans "%m, massScanDic[m]," finalScanEstimates:\n", finalScanEstimates[:,0])
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''

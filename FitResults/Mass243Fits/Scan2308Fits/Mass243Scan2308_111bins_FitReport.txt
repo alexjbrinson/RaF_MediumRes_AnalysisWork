@@ -5,27 +5,26 @@
     # function evals   = 22006
     # data points      = 111
     # variables        = 10
-    chi-square         = 0.16828444
-    reduced chi-square = 0.00166618
-    Akaike info crit   = -700.570913
-    Bayesian info crit = -673.475611
+    chi-square         = 0.16828632
+    reduced chi-square = 0.00166620
+    Akaike info crit   = -700.569669
+    Bayesian info crit = -673.474367
 ##  Warning: uncertainties could not be estimated:
-    sv0_skew:       at boundary
     sv1_center:     at initial value
 [[Variables]]
-    l0_intercept:  -7469.77375 (init = 92.27611)
-    l0_slope:       0.57082960 (init = 0)
-    sv0_skew:      -11.9998887 (init = -2)
-    sv0_sigma:      1.32933598 (init = 0.8)
-    sv0_amplitude:  134.150838 (init = 231.0084)
+    l0_slope:       0.57089430 (init = 0)
+    l0_intercept:  -7470.63152 (init = 92.27611)
     sv0_center:     13272.6849 (init = 13272.5)
-    sv0_gamma:      0.80825281 (init = 1.5)
-    sv0_height:     40.2595318 == '0.3989423*sv0_amplitude/max(1.e-15, sv0_sigma)'
-    sv0_fwhm:       4.78735095 == '3.6013100*sv0_sigma'
-    sv1_skew:      -11.9998887 == 'sv0_skew'
-    sv1_sigma:      0.26350614 (init = 0.8)
-    sv1_amplitude:  28.9629395 (init = 111.2723)
+    sv0_skew:      -11.9998484 (init = -2)
+    sv0_amplitude:  134.144429 (init = 231.0084)
+    sv0_sigma:      1.32935374 (init = 0.8)
+    sv0_gamma:      0.80816627 (init = 1.5)
+    sv0_height:     40.2570701 == '0.3989423*sv0_amplitude/max(1.e-15, sv0_sigma)'
+    sv0_fwhm:       4.78741493 == '3.6013100*sv0_sigma'
     sv1_center:     13266.5983 (init = 13266.6)
-    sv1_gamma:      0.80825281 == 'sv0_gamma'
-    sv1_height:     43.8492318 == '0.3989423*sv1_amplitude/max(1.e-15, sv1_sigma)'
-    sv1_fwhm:       0.94896729 == '3.6013100*sv1_sigma'
+    sv1_skew:      -11.9998484 == 'sv0_skew'
+    sv1_amplitude:  28.9612211 (init = 111.2723)
+    sv1_sigma:      0.26359558 (init = 0.8)
+    sv1_gamma:      0.80816627 == 'sv0_gamma'
+    sv1_height:     43.8317523 == '0.3989423*sv1_amplitude/max(1.e-15, sv1_sigma)'
+    sv1_fwhm:       0.94928940 == '3.6013100*sv1_sigma'
