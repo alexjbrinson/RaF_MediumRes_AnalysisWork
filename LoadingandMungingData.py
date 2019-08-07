@@ -294,7 +294,29 @@ def mergeDatRaw(mass, scanList,verbose=False):
     dfList.append(rawDatPrep(mass,scan))
   return(pd.concat(dfList))
 
-def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True, normalizedOn=False,ltrim=0,rtrim=0, verbose=True):
+def trimRange(outputDF, ltrim=-1, rtrim=-1):
+  if ltrim>0:
+    outputDF.loc[:,'wavenumber_mean']=outputDF['wavenumber_mean'].map(lambda v: v if v > ltrim else float('NaN'))
+    outputDF = outputDF[pd.notna(outputDF['wavenumber_mean'])]
+  if rtrim>0:
+    outputDF.loc[:,'wavenumber_mean']=outputDF['wavenumber_mean'].map(lambda v: v if v < rtrim else float('NaN'))
+    outputDF = outputDF[pd.notna(outputDF['wavenumber_mean'])]
+  return(outputDF)
+
+def normalizer(outputDF, normalizedOn=False):
+  if normalizedOn == "Integral":
+    sigTot = np.sum(outputDF.loc[:,'signal_value'])
+    print("test: sigTot=", sigTot)
+    outputDF['signal_value']=outputDF['signal_value']/sigTot
+    outputDF['signal_uncertainty']=outputDF['signal_uncertainty']/sigTot
+  elif normalizedOn=="MaxValue":
+    maxVal = np.max(outputDF.loc[:,'signal_value'])
+    print("test: maxVal=", maxVal)
+    outputDF.loc[:,'signal_value']=outputDF['signal_value']/maxVal
+    outputDF.loc[:,'signal_uncertainty']=outputDF['signal_uncertainty']/maxVal
+  return(outputDF)
+
+def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True, normalizedOn=False,ltrim=-1,rtrim=-1, verbose=False):
   #converts (usually huge) time-centric dataframes from rawDatPrep() into spectrum-friendly wavenumber-based dataframes
   kVals = np.array(df.loc[:,"wavenumber"]); kRange=max(kVals)-min(kVals)
   if verbose: print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
@@ -321,12 +343,9 @@ def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=Tr
   outputDF.sort_values('wavenumber_mean',inplace=True)
   if noNaNsense:
     outputDF = outputDF.dropna(how='any',axis=0)
-  if ltrim>0:
-    outputDF['wavenumber_mean']=outputDF['wavenumber_mean'].map(lambda v: v if v > ltrim else float('NaN'))
-    outputDF = outputDF[pd.notna(outputDF['wavenumber_mean'])]
-  if rtrim>0:
-    outputDF['wavenumber_mean']=outputDF['wavenumber_mean'].map(lambda v: v if v < rtrim else float('NaN'))
-    outputDF = outputDF[pd.notna(outputDF['wavenumber_mean'])]
+  if (ltrim > -1 or rtrim > -1):
+    outputDF=trimRange(outputDF, ltrim=ltrim, rtrim=rtrim)
+
   if cropSparseEnds and len(outputDF['wavenumber_mean'])>3:
     dRay = np.array(outputDF.dropna(how='any',axis=0, inplace=False).loc[:,'wavenumber_mean'])
     meanSpacing = np.mean(dRay[1:]-dRay[:-1])
@@ -340,18 +359,10 @@ def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=Tr
     # If the any of the preceding 3 v-spacings are greater than 3 times the average spacing, increment the index at which to start cropping(?)
       e-=1
     outputDF = outputDF.iloc[i:e,:]
-  if normalizedOn == "Integral":
-    sigTot = np.sum(outputDF.loc[:,'signal_value'])
-    print("test: sigTot=", sigTot)
-    outputDF['signal_value']=outputDF['signal_value']/sigTot
-    outputDF['signal_uncertainty']=outputDF['signal_uncertainty']/sigTot
-  elif normalizedOn=="MaxValue":
-    maxVal = np.max(outputDF.loc[:,'signal_value'])
-    print("test: maxVal=", maxVal)
-    outputDF['signal_value']=outputDF['signal_value']/maxVal
-    outputDF['signal_uncertainty']=outputDF['signal_uncertainty']/maxVal
-  outputDF.reset_index(drop=True, inplace=True)
 
+  if (normalizedOn == "Integral" or normalizedOn=="MaxValue"):
+    outputDF=normalizer(outputDF, normalizedOn=normalizedOn)
+  outputDF.reset_index(drop=True, inplace=True)
   return(outputDF)
 
 def plotData(output, m, scanInd, wavenumber, nBins=-1, resolution=-1):

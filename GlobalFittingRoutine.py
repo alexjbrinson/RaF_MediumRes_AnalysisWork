@@ -110,7 +110,7 @@ def voigt(x, A, mu, sigma, gamma):
   u=x-mu
   return(A*np.real( special.wofz((u+1j*gamma)/(sqrt2*sigma)) )/(math.sqrt(2*math.pi)*sigma) )
 
-def skewedVoigt(x, A, mu, sigma, gamma, skew=0):
+def skewedVoigt(x, A, mu, sigma, gamma, skew):
   skewFactor=1+(special.erf(skew*(x-mu))/(sqrt2*sigma))
   return(voigt(x,A,mu,sigma,gamma)*skewFactor)
 
