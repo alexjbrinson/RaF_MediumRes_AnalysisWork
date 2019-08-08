@@ -80,9 +80,14 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
   N = len(peaksList)
   if len(peakSigmas) == 0:
     peakSigmas = 2*np.ones_like(peaksList)
-  else:
-    assert(len(peakSigmas) == N)
-    assert(np.all(peakSigmas>0))
+  elif len(peakSigmas) == 1:
+    peakSigmas = peakSigmas*np.ones_like(peakList)
+  assert(len(peakSigmas) == N)
+  assert(np.all(peakSigmas>0))
+  if sameSigma and (np.any(peakSigmas[1:]!=peakSigmas[0]))  :
+    print("Just a heads up, you input a list of distinct sigma values, but sameSigma==True, so the first sigma value will be used for each peak. Set sameSigma to False if you dislike this.")
+    peakSigmas=peakSigmas[0]*np.ones_like(peakSigmas)
+
   if type(skew0) == 'float':
     skewList = skew0*np.ones_like(peaksList)
   else:
@@ -105,7 +110,6 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
   peakModelsArray = []
   warningStatus=0
   for i in range(N):
-    #print("Adding peak%d to model fit. center at %.2f"%(i,peaksList[i]))
     k = peaksList[i]; sigmaK = peakSigmas[i] 
     #print("k=%.2f"%k)
     ind1 = np.argmin(abs(xDat-k))
@@ -117,45 +121,37 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
       print("WARNING: Peak occurs too closely to edge of dataset. A lower rebin setting is recommended.")
       warningStatus=-1
       return(False, warningStatus)
-    if k-.66>xDat[8]:
+    '''if k-.66>xDat[8]:
       k2 = peaksList[i] -.66; #pea8ksList[i], may be the "center", but it might not be where distribution is maximized. -.66 cm^{-1} is the shift for gamma=1.5,sigma=.8,skew=-2
       ind1 = np.argmin(abs(xDat-k2))
       ind2 = np.argmax(yDat[ind1-7:ind1+8])+ind1-7
       estimHeight2 = yDat[ind2] - bg
       if estimHeight2>estimHeight: print("aha! Had to look left to find global maximum!")
-      estimHeight = max(estimHeight,estimHeight2)
-    amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
-    height1=amp*special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real/(peakSigmas[i]*math.sqrt(2*math.pi))
+      estimHeight = max(estimHeight,estimHeight2)'''
+    estimHeight = findLocalMax(datFrame, peaksList-.5, 1)[1,1]
+    print("test. new estimHeight = %.2f"%estimHeight)
+    #amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
+    #height1=amp*special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real/(peakSigmas[i]*math.sqrt(2*math.pi))
     #print("testing math stuff... amp=%.2f; height=%.2f"%(amp,height1))
     svmod = SkewedVoigtModel(prefix="sv"+str(i)+"_")
     svmod.set_param_hint('center', value=peaksList[i], min=max(peaksList[i]-2*peakSigmas[i], xDat[3]), max=min(peaksList[i]+2*peakSigmas[i],xDat[-3]))
-    if sameSigma:
-      if i == 0: params['sv'+str(i)+'_sigma']= Parameter(value=peakSigmas[0], min=0, max = 3*peakSigmas[0], vary=True)
-      elif i>0:
-        params['sv'+str(i)+'_sigma'] = Parameter(expr='sv0_sigma')
-    else: svmod.set_param_hint('sigma', value=peakSigmas[i], min=0.1, max=2*peakSigmas[i])
+    svmod.set_param_hint('sigma', value=peakSigmas[i], min=0.1, max=2*peakSigmas[i])
     #svmod.set_param_hint('amplitude', value=estimHeight*((initGamma+peakSigmas[i])/(1*.45)), min=3*np.mean(ySigDat))
     #svmod.set_param_hint('amplitude', value=amp, min=3*np.mean(ySigDat))
     svmod.set_param_hint('amplitude', value=amp*.6, min=3*np.mean(ySigDat))#?
     svmod.set_param_hint('skew', value = skewList[i], min=-12,max=12)
-    """if N>2: svmod.set_param_hint('skew', value = -4, min=-12,max=12)
-    elif N<=2: svmod.set_param_hint('skew', value = 0, min=-1,max=1, vary=True)"""
     peakModelsArray.append(svmod)
     params += svmod.make_params()#svmod.guess(yDat, x=xDat)#
     if i == 0: params['sv'+str(i)+'_gamma']= Parameter(value=initGamma, min=0, max = 3*peakSigmas[i], vary=True)
     elif i>0:
       params['sv'+str(i)+'_gamma'] = Parameter(expr='sv0_gamma')
-      if sameSkew:
-        params['sv'+str(i)+'_skew'] = Parameter(expr='sv0_skew') #TODO: Test out this constraint now that my initial parm ests are good.
+      if sameSkew: params['sv'+str(i)+'_skew'] = Parameter(expr='sv0_skew')
+      if sameSigma: params['sv'+str(i)+'_sigma'] = Parameter(expr='sv0_sigma')
 
   mod = np.sum(peakModelsArray)+lmod
-  #print("test: gamma sv0_= %d"%params.valuesdict()['sv0_gamma'])
-  #for pname, par in params.items():
-    #print(pname,par)
   print("parameters initialized. Starting fit now.")
   if useWeights: fitResult=mod.fit(yDat, params, x=xDat, method=method, weights=(1/np.square(ySigDat))/np.sum(1/np.square(ySigDat)) )
   else: fitResult=mod.fit(yDat, params, x=xDat, method=method)
-  #print(fitResult.fit_report(min_correl=0.25))
   return(fitResult, warningStatus)
 
 def findLocalMax(datFrame, guess, searchWidth, xcol="wavenumber_mean",ycol="signal_value", uncertIndex=3, verbose=False):
@@ -409,7 +405,7 @@ def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np
 
 if __name__ == '__main__':
   pd.options.mode.chained_assignment = None  # default='warn'
-  rewrite=False
+  rewrite=True
   ltrim=13256.5; rtrim=13287
   sameSigma=True
   idx = pd.IndexSlice
@@ -431,147 +427,9 @@ if __name__ == '__main__':
   gammaEst=1.77
   skew0=-2
   resolutionList=[.01,.02,.05,.1,.2,.5]
-  isotopeDataFrame = pd.DataFrame(index=massList, columns = pd.MultiIndex.from_product([transitionLabels,estimationMethodLabels, estimationStatisticsLabels], names=['Transitions','Methods','Stats']) )
-  isotopeDataFrame=isotopeDataFrame.sort_index()
-  #isotopeDataFrame.loc[242,('0->0','SkewedMu')]
-  """FinalDataCompileArray = np.array()
-  fig_fce = plt.figure("Final SkewedMu")
-  fig_fce.title("Comparing Final SkewedMu For Different RaF Isotopes")
-  fig_fdl = plt.figure("Final LocMaxDat Ests")
-  fig_ffl = plt.figure("Final LocMaxFit Ests")
-  figDiffs = plt.figure("figDiffs")"""
-  for m in massList:
+
+'''  for m in massList:
     s=massScanDic[m]
     peakList=initCenterEsts
     finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peakList=peakList,peakSigmas=sigmaEst*np.ones_like(peakList),sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=True, useWeights=True, skew0=-4)
-    (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])
-    for p in range(len(peakList)):
-      isotopeDataFrame.loc[m,(transitionLabels[p],'SkewedMu')]=fce[p,:]
-      isotopeDataFrame.loc[m,(transitionLabels[p],'LocMaxDat')]=fdl[p,:]
-      isotopeDataFrame.loc[m,(transitionLabels[p],'LocMaxFit')]=ffl[p,:]
-    #with pd.option_context('display.max_rows', 100, 'display.max_columns', 60): print("newest isotope entry in dataframe:\n",isotopeDataFrame.loc[m,(idx[:,:,'mean'])])
-    """for s in massScanDic[m]:
-      print("m=%d, s=%d")
-      if (s in [2312,2313,2283]): peakList = initCenterEsts
-      elif (s in [2301,2302,2303]): peakList = [13284.7,13278.2,13272.8]
-      elif s==2308: peakList=[13272.5,13266.6]
-      elif (s in [2304,2305,2306]): peakList = initCenterEsts
-      elif s == 2307: peakList = [13272.5,13266.67,13261]
-      elif (s in [2188,2190]): [13284.7,13278.2,13272.8]
-      elif s==2311: peakList = initCenterEsts
-      else: peakList=initCenterEsts
-      FCUK.Scanalyzer(m,s,rewrite=True,peakList=peakList,peakSigmas=sigmaEst*np.ones_like(peakList),initGamma=gammaEst,resList=resolutionList,method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=True, useWeights=True, skew0=-4)"""
-    
-  with pd.option_context('display.max_rows', 100, 'display.max_columns', 100):print("ayy, are we done? isotopeDataFrame:\n",isotopeDataFrame)
-  
-
-  if not os.path.exists('./FitResults/OutputFiles/'): os.makedirs('./FitResults/OutputFiles/')
-  isotopeDataFrame.to_csv(path_or_buf='./FitResults/OutputFiles/IsotopeDataFrame.csv')
-  
-  """Transition(S) frequencies plot to compare different isotopes and methods"""
-  plt.figure('IsotopeDataFrame in plot form')
-  plt.xlabel(r'Wavenumber $(cm^{-1})$', fontsize=18)
-  for j in range(len(massList)):
-    m=massList[j]
-    offset = (j-math.floor(len(massList)/2))/(4*len(massList)) 
-    color = next(plt.gca()._get_lines.prop_cycler)['color']
-    for i in range(len(estimationMethodLabels)):
-      if i==0: plt.errorbar(x=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'mean']],y=i*np.ones_like(initCenterEsts)+offset, xerr=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'range']],fmt="o",label=r'$^{%d}Ra^{19}F$'%(m-19), color=color)
-      else: plt.errorbar(x=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'mean']],y=i*np.ones_like(initCenterEsts)+offset, xerr=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'range']],fmt="o", color=color)
-  plt.gcf().set_size_inches(20, 12)
-  plt.title("Investigating Transition Frequency dependence on isotope number in RaF\n(3 methods for peak identification considered)", fontsize=24)
-  plt.yticks(ticks=range(len(estimationMethodLabels)),labels=estimationMethodLabels, fontsize=18)
-  plt.legend(loc='best', fontsize=18)
-  plt.savefig('./FitResults/IsotopeDataFrameSummaryPlot')
-  plt.close()
-
-  """Now converting to shift data:"""
-  referenceFrame = isotopeDataFrame.loc[245,idx[:,:,['mean','range']]].copy()#hehe "reference frame". Was not intentional lol
-  isoShiftsFrame=pd.DataFrame(index=massList, columns = pd.MultiIndex.from_product([transitionLabels,estimationMethodLabels, ['shift','error']], names=['Shifts','Methods','Stats']) )
-  for m in massList:
-    isoShiftsFrame.loc[m,idx[:,:,'shift']]=(isotopeDataFrame.loc[m,idx[:,:,'mean']] - referenceFrame.loc[idx[:,:,"mean"]]).values
-    errorSquaror = np.square(isotopeDataFrame.loc[m,idx[:,:,'range']]) + np.square(referenceFrame.loc[idx[:,:,"range"]])
-    isoShiftsFrame.loc[m,idx[:,:,'error']]=np.sqrt(errorSquaror.astype(np.float64)).values
-  with pd.option_context('display.max_rows', 100, 'display.max_columns', 30):print("Isotope Shifts:\n",isoShiftsFrame)
-  
-  """shift vs mass plots to compare methods"""
-  for i in range(len(transitionLabels)):
-    transition=transitionLabels[i]
-    plt.figure(transition)
-    plt.gcf().set_size_inches(20, 12)
-    plt.title(r"Isotope Shift vs. Mass for the %d'' $\rightarrow$ %d' Transition in RaF"%(i, i)+"\n(%d methods for peak identification considered)"%len(estimationMethodLabels), fontsize=24)
-    for j in range(len(estimationMethodLabels)):
-      meth = estimationMethodLabels[j]
-      color = next(plt.gca()._get_lines.prop_cycler)['color']
-      offset = (j-math.floor(len(estimationMethodLabels)/2))/(4*len(estimationMethodLabels)) 
-      plt.errorbar(x=(massList-245)+offset, y=isoShiftsFrame.loc[:,idx[transition,meth,'shift']], yerr=isoShiftsFrame.loc[:,idx[transition,meth,'error']],fmt="o",label=meth, color=color, markersize=8)
-    plt.xlabel('mass diffs (amu)', fontsize=18)
-    plt.ylabel(r'shift $(cm^{-1})$', fontsize=18)
-    plt.legend(loc='best', fontsize=18)
-    plt.savefig('./FitResults/IsotopeShiftDiffMethods_%s-%s.png'%(i,i))
-    plt.close()
-
-  """shift vs mass plots to compare transitions"""
-  for meth in estimationMethodLabels:
-    plt.figure(meth)
-    plt.gcf().set_size_inches(20, 12)
-    plt.title("Isotope Shift vs. Mass for %s Estimation method in RaF\n(4 transitions included)"%meth, fontsize=24)
-    for j in range(len(transitionLabels)):
-      transition = transitionLabels[j]
-      color = next(plt.gca()._get_lines.prop_cycler)['color']
-      offset = (j-math.floor(len(transitionLabels)/2))/(4*len(transitionLabels)) 
-      plt.errorbar(x=(massList-245)+offset, y=isoShiftsFrame.loc[:,idx[transition,meth,'shift']], yerr=isoShiftsFrame.loc[:,idx[transition,meth,'error']],fmt="o",label=r"$%d \rightarrow %d$"%(i,i), color=color, markersize=8)
-    plt.xlabel('mass diffs (amu)', fontsize=18)
-    plt.ylabel(r'shift $(cm^{-1})$', fontsize=18)
-    plt.legend(loc='best', fontsize=18)
-    plt.savefig('./FitResults/IsotopeShiftDiffTransitions_%s.png'%meth)
-    plt.close()    
-  #TODO: Isotope summary plots. Take differences
-'''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''
-"""
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import LoadingAndMungingData as lmd
-import newTask4_IsotopeShiftsLetsGoooo as FCUK
-pd.options.mode.chained_assignment = None  # default='warn'
-rewrite=False
-ltrim=13256.5; rtrim=13287
-sameSigma=True
-idx = pd.IndexSlice
-allScansBigDic = {}
-for m in [241,242,243,244,245,247]: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
-massList=[242,243,244,245, 247]
-colorDict={242:'red', 243:'orange',244:'green',245:'blue',247:'purple'}
-massScanDic={}
-massScanDic[242]=[2312, 2313] #These are good individually and combined!
-massScanDic[243]=[2302,2303,2308]#2300? #2283(from a different time, when signals weren't as strong. use in future), 2301("wavemeter stopped working in the middle of a peak" + relatively weak signal)
-massScanDic[244]=[2304,2305,2306]#,2307] #possibly remove 2307?
-massScanDic[245]=[2309,2310,2320]#, [2341(75mW),2349],2350("re-tuned TiSa overlap upstairs --> additional 50% improvement")]#,[2346] is a pdl scan though. gross...#2178 is Ti:Sa, but actually gross af#
-massScanDic[247]=[2311,2322]#,[2188,2190](also decent, but from diff era with different rates)
-initCenterEsts=[13284.75,13278.62,13272.50,13266.5]#,13260.35]
-transitionLabels = np.array(["%d->%d"%(i,i) for i in range(len(initCenterEsts))])
-estimationMethodLabels = np.array(['SkewedMu','LocMaxDat','LocMaxFit'])
-estimationStatisticsLabels = np.array(['mean','stderr','range'])
-sigmaEst=.55
-gammaEst=1.77
-skew0=-2
-resolutionList=[.01,.02,.05,.1,.2,.5]
-isotopeDataFrame = pd.DataFrame(index=massList, columns = pd.MultiIndex.from_product([transitionLabels,estimationMethodLabels, estimationStatisticsLabels], names=['Transitions','Methods','Stats']) )
-isotopeDataFrame=isotopeDataFrame.sort_index()
-for m in massList:
-  s=massScanDic[m]
-  peakList=initCenterEsts
-  finalfitResults = FCUK.Scanalyzer(m,s,rewrite=rewrite,peakList=peakList,peakSigmas=sigmaEst*np.ones_like(peakList),sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=True, useWeights=True, skew0=-4)
-  (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])
-  for p in range(len(peakList)):
-    isotopeDataFrame.loc[m,(transitionLabels[p],'SkewedMu')]=fce[p,:]
-    isotopeDataFrame.loc[m,(transitionLabels[p],'LocMaxDat')]=fdl[p,:]
-    isotopeDataFrame.loc[m,(transitionLabels[p],'LocMaxFit')]=ffl[p,:]
-  with pd.option_context('display.max_rows', 100, 'display.max_columns', 60): print("newest isotope entry in dataframe:\n",isotopeDataFrame.loc[m,(idx[:,:,'mean'])])
-    
-with pd.option_context('display.max_rows', 100, 'display.max_columns', 100):print("ayy, are we done? isotopeDataFrame:\n",isotopeDataFrame)
-#if not os.path.exists('./FitResults/OutputFiles/'): os.makedirs('./FitResults/OutputFiles/')
-#isotopeDataFrame.to_csv(path_or_buf='./FitResults/OutputFiles/IsotopeDataFrame.csv')
-"""
-
+    (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])'''
