@@ -356,7 +356,7 @@ def scanFitsFinalEsts(compRay):
     finalScanEstimates[p,0] = weightStats[0]; finalScanEstimates[p,1] = weightStats[1]
   return(finalScanEstimates)
 
-def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np.array([]), initGamma=1,resList=[.01,.02,.05,.1,.2,.5], method='leastsq',similarSigma=True, makePlots=True, sameSkew=True, sameSigma=True, useWeights=True, ltrim=-1, rtrim=-1, skewList=np.array([]), skew0='NaN', rewrite=False):
+def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np.array([]), initGamma=1,resList=[.01,.02,.05,.1,.2,.5], method='leastsq',similarSigma=True, makePlots=True, sameSkew=True, sameSigma=True, useWeights=True, ltrim=-1, rtrim=-1, skewList=np.array([]), skew0='NaN', rewrite=False, verbose=False):
   m = mass
   scan = str(s)
   print("Now running Scanalyzer for mass = %d; scan: %s"%(mass, scan))
@@ -390,7 +390,7 @@ def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np
     finCenterEst = scanFitsFinalEsts(ccex); fce = finCenterEst
     finDatLocMaxEst = scanFitsFinalEsts(cdlm); fdl = finDatLocMaxEst
     finFitLocMaxEst = scanFitsFinalEsts(cflm); ffl = finFitLocMaxEst
-  print("Final Center Estimate:\n%s\nFinal Local Max Ests from fits:\n%s\nFinal Local Max Ests from data:\n%s\n"%(str(fce),str(fdl),str(ffl)))
+  if verbose: print("Final Center Estimate:\n%s\nFinal Local Max Ests from fits:\n%s\nFinal Local Max Ests from data:\n%s\n"%(str(fce),str(fdl),str(ffl)))
   if not os.path.exists('./FitResults/OutputFiles/mass%d/'%(m)): os.makedirs('./FitResults/OutputFiles/mass%d/'%(m))
   xFile=open("./FitResults/OutputFiles/Mass%d/Mass%dScan%sCompiledFitCenterEstimates.txt"%(m,m,s),'w+')
   xFile.write("#Compiled Fit Center Estimates:\n%s\n\n#Scanalyzer Final Estimates:\n%s\n#1Sigma:\n%s\n#Range:\n%s"%(str(ccex), str(fce[:,0]), str(fce[:,1]), str(fce[:,2])))
@@ -413,9 +413,9 @@ if __name__ == '__main__':
   ltrim=13256.5; rtrim=13287
   sameSigma=True
   idx = pd.IndexSlice
+  massList=np.array([242,243,244,245, 247])
   allScansBigDic = {}
-  for m in [241,242,243,244,245,247]: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
-  massList=[242,243,244,245, 247]
+  for m in massList: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
   colorDict={242:'red', 243:'orange',244:'green',245:'blue',247:'purple'}
   massScanDic={}
   massScanDic[242]=[2312, 2313] #These are good individually and combined!
@@ -449,7 +449,7 @@ if __name__ == '__main__':
       isotopeDataFrame.loc[m,(transitionLabels[p],'SkewedMu')]=fce[p,:]
       isotopeDataFrame.loc[m,(transitionLabels[p],'LocMaxDat')]=fdl[p,:]
       isotopeDataFrame.loc[m,(transitionLabels[p],'LocMaxFit')]=ffl[p,:]
-    with pd.option_context('display.max_rows', 100, 'display.max_columns', 60): print("newest isotope entry in dataframe:\n",isotopeDataFrame.loc[m,(idx[:,:,'mean'])])
+    #with pd.option_context('display.max_rows', 100, 'display.max_columns', 60): print("newest isotope entry in dataframe:\n",isotopeDataFrame.loc[m,(idx[:,:,'mean'])])
     """for s in massScanDic[m]:
       print("m=%d, s=%d")
       if (s in [2312,2313,2283]): peakList = initCenterEsts
@@ -467,6 +467,60 @@ if __name__ == '__main__':
 
   if not os.path.exists('./FitResults/OutputFiles/'): os.makedirs('./FitResults/OutputFiles/')
   isotopeDataFrame.to_csv(path_or_buf='./FitResults/OutputFiles/IsotopeDataFrame.csv')
+  
+  for m in massList:
+    color = next(plt.gca()._get_lines.prop_cycler)['color']
+    for i in range(len(estimationMethodLabels)):
+      if i==0: plt.errorbar(x=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'mean']],y=i*np.ones_like(initCenterEsts), xerr=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'range']],fmt="o",label=r'$^{%d}Ra^{19}F$'%(m-19), color=color)
+      else: plt.errorbar(x=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'mean']],y=i*np.ones_like(initCenterEsts), xerr=isotopeDataFrame.loc[m,idx[:,estimationMethodLabels[i],'range']],fmt="o", color=color)
+  plt.figure('IsotopeDataFrame in plot form')
+  plt.gcf().set_size_inches(20, 12)
+  plt.title("Investigating Transition Frequency dependence on isotope number in RaF\n(3 methods for peak identification considered)")
+  plt.xlabel(r'Wavenumber $(cm^{-1})$')
+  plt.yticks(ticks=range(len(estimationMethodLabels)),labels=estimationMethodLabels)
+  plt.legend(loc='best')
+  plt.savefig('./FitResults/IsotopeDataFrameSummaryPlot')
+  plt.close()
+
+  """Now converting to shift data:"""
+  referenceFrame = isotopeDataFrame.loc[245,idx[:,:,['mean','range']]].copy()#hehe "reference frame". Was not intentional lol
+  isoShiftsFrame=pd.DataFrame(index=massList, columns = pd.MultiIndex.from_product([transitionLabels,estimationMethodLabels, ['shift','error']], names=['Shifts','Methods','Stats']) )
+  for m in massList:
+    isoShiftsFrame.loc[m,idx[:,:,'shift']]=(isotopeDataFrame.loc[m,idx[:,:,'mean']] - referenceFrame.loc[idx[:,:,"mean"]]).values
+    errorSquaror = np.square(isotopeDataFrame.loc[m,idx[:,:,'range']]) + np.square(referenceFrame.loc[idx[:,:,"range"]])
+    isoShiftsFrame.loc[m,idx[:,:,'error']]=np.sqrt(errorSquaror.astype(np.float64)).values
+  with pd.option_context('display.max_rows', 100, 'display.max_columns', 30):print("Isotope Shifts:\n",isoShiftsFrame)
+  
+  """shift vs mass plots to compare methods"""
+  for i in range(len(transitionLabels)):
+    transition=transitionLabels[i]
+    plt.figure(transition)
+    plt.gcf().set_size_inches(20, 12)
+    plt.title("Isotope Shift vs. Mass for the %s Transition in RaF\n(3 methods for peak identification considered)"%transition)
+    for meth in [estimationMethodLabels[0],estimationMethodLabels[2]]:
+      color = next(plt.gca()._get_lines.prop_cycler)['color']
+      plt.errorbar(x=(massList-245), y=isoShiftsFrame.loc[:,idx[transition,meth,'shift']], yerr=isoShiftsFrame.loc[:,idx[transition,meth,'error']],fmt="o",label=meth, color=color, markersize=8)
+    plt.title("Investigating Transition Frequency dependence on isotope number in RaF\n(3 methods for peak identification considered)")
+    plt.xlabel('mass diffs (amu)')
+    plt.ylabel(r'shift $(cm^{-1})$')
+    plt.legend(loc='best')
+    plt.savefig('./FitResults/IsotopeShiftDiffMethods_%s-%s.png'%(i,i))
+    plt.close()
+
+  """shift vs mass plots to compare transitions"""
+  for meth in estimationMethodLabels:
+    plt.figure(meth)
+    plt.gcf().set_size_inches(20, 12)
+    plt.title("Isotope Shift vs. Mass for %s Estimation method in RaF\n(4 transitions included)"%meth)
+    for transition in transitionLabels:
+      color = next(plt.gca()._get_lines.prop_cycler)['color']
+      plt.errorbar(x=(massList-245), y=isoShiftsFrame.loc[:,idx[transition,meth,'shift']], yerr=isoShiftsFrame.loc[:,idx[transition,meth,'error']],fmt="o",label=transition, color=color, markersize=8)
+    plt.title("Investigating Transition Frequency dependence on isotope number in RaF\n(3 methods for peak identification considered)")
+    plt.xlabel('mass diffs (amu)')
+    plt.ylabel(r'shift $(cm^{-1})$')
+    plt.legend(loc='best')
+    plt.savefig('./FitResults/IsotopeShiftDiffTransitions_%s.png'%meth)
+    plt.close()    
   #TODO: Isotope summary plots. Take differences
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''
 """
