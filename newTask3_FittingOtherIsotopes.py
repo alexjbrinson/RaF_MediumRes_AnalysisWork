@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.patches import Rectangle
 import LoadingAndMungingData as lmd
+#import FrequencyConvertedUtilityKitOutdated_6Aug2019 as FCUK
 import FrequencyConvertedUtilityKit as FCUK
 
 '''3. "Analyse each scan individually and extract an average "peak position" for each electronic transition "'''
@@ -45,7 +46,7 @@ if __name__ == '__main__':
       elif (s in [2188,2190]): [13284.7,13278.2,13272.8]
       elif s==2311: peakList = initCenterEsts
       else: peakList=initCenterEsts
-      FCUK.Scanalyzer(m,s,rewrite=False,peakList=peakList,peakSigmas=sigmaEst*np.ones_like(peakList),initGamma=gammaEst,resList=resolutionList,method="leastsq", fitPlots=True, binSpreadPlot=True, sameSkew=True, useWeights=True, skew0=-2)
+      FCUK.Scanalyzer(m,s,rewrite=False,peakList=peakList,peakSigmas=sigmaEst*np.ones_like(peakList),initGamma=gammaEst,resList=resolutionList,method="leastsq", makePlots=True, sameSkew=True, useWeights=True, skew0=-2)
     (cfrx,ccex) = FCUK.fitScanX(lmd.mergeDatRaw(m,massScanDic[m]),m,0, initCenterEsts, peakSigmas=sigmaEst*np.ones_like(initCenterEsts), initGamma=gammaEst, resList=resolutionList, makePlots=True, useWeights=True, sameSkew=True, skew0=-2)
     FCUK.MultiBinSpreadPlotter(m,0,ccex,resolutionList)
     finalScanEstimates = np.c_[np.mean(ccex[:,:,0], axis=0), np.std(ccex[:,:,0], axis=0), np.max(ccex[:,:,0], axis=0)-np.min(ccex[:,:,0], axis=0)]

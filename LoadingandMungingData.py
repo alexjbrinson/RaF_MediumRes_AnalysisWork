@@ -28,54 +28,25 @@ wavemeter_pdl = COBRA
 
 def computeBeta(m, voltage):
   #computes bunch velocity from isotope mass and iscool voltage T = m/2 v^2 ==> v = sqrt(2*T/m)
-  amu2eV = 931494102 #1 amu(*c^2) ~= 931494273 eV
-  beta = math.sqrt(2*voltage/(m*amu2eV))
+  amu2eV = np.int64(931494102) #1 amu(*c^2) ~= 931494273 eV
+  #print("beta^2 = ", 2*voltage/(m*amu2eV) )
+  beta = np.sqrt(2*voltage/(m*np.int64(amu2eV)))#math.sqrt(2*voltage/(m*amu2eV))
   return(beta)
 
 def dopplerCorrectionFactor(m, voltage):
   #uses isotope mass and iscool voltage to compute doppler correction factor for wavenumber measurements
-  amu2eV = 931494102 #1 amu(*c^2) ~= 931494273 eV
-  beta = math.sqrt(2*voltage/(m*amu2eV))
-  gamma = 1/math.sqrt(1-beta**2)
-  dcf = gamma*(1+beta)
+  amu2eV = np.int64(931494102) #1 amu(*c^2) ~= 931494273 eV
+  beta = np.sqrt(2*voltage/(m*amu2eV))
+  #print("m=%d, amu2eV=%d, np.int64(m*amu2eV)=%d, m*np.int64(amu2eV)=%d \n[voltage/m,  (voltage/m)/amu2ev, betaVals]:\n"%(m,amu2eV,m*np.int64(amu2eV),m*amu2eV),np.c_[voltage/m, (voltage/m)/amu2eV, beta])
+  #gamma = 1/np.sqrt(1 - np.square(beta) )
+  #dcf = gamma*(1+beta)
+  dcf = np.sqrt(1+beta)/np.sqrt(1-beta)
   return(dcf)
-
-def wavemeterDataCleaner(df, wavenumberToUse):
-  #Removes garbage wavemeter data
-  wmCopy = df.sort_values(by='timestamp')
-  wmVals = np.array(wmCopy.loc[:,wavenumberToUse])
-  wmtypicalDiff = np.mean(np.abs(wmVals[1:]-wmVals[:-1]))
-  for i in range(len(wmVals)-1):
-    if wmVals[i]<0:
-      print("woah dere. wmVal[%d] = %f is negative, yo"%(i, wmVals[i]))
-      wmCopy.iloc[i, wmCopy.columns.get_loc(wavenumberToUse)] = float('nan')
-  wmCopy = wmCopy[pd.notna(wmCopy[wavenumberToUse])]
-
-  """wmVals = np.array(wmCopy.loc[:,wavenumberToUse])
-  wmtypicalDiff = np.mean(np.abs(wmVals[1:]-wmVals[:-1])) 
-  for i in range(len(wmVals)-1):
-    if np.abs(wmVals[i+1]-wmVals[i])>max(20*wmtypicalDiff,20):
-      print("woah dere. wmVal[%d] = %f is way out there, yo"%(i+1,wmVals[i+1]))
-      assert(wmCopy.iloc[i, wmCopy.columns.get_loc(wavenumberToUse)]==wmVals[i])
-      for j in range(i+1,len(wmVals)-1):
-        if np.abs(wmVals[j+1]-wmVals[j])>max(20*wmtypicalDiff,20) and np.abs(wmVals[j+1]-wmVals[i]<max(20*wmtypicalDiff,20)):
-          print("bad data segment ends at wmVal[%d] = %f " %(j+1,wmVals[j+1]))
-          wmCopy.iloc[i+1:j,wmCopy.columns.get_loc(wavenumberToUse)]= float('nan')*np.ones(j-i-1)
-          i = j+1
-          break
-    elif wmVals[i]<0:
-      print("woah dere2? wmVal[%d] = %f is negative still? yo.."%(i, wmVals[i]))
-      wmCopy.loc[i, wavenumberToUse] = float('nan')"""
-  wmCleaned = wmCopy[pd.notna(wmCopy[wavenumberToUse])]
-  #print("TEST. wmCleaned:\n", wmCleaned)
-  return(wmCleaned)
 
 def whichWavemeter(mass, scanInd, verbose=False):
   #Determines which wavemeter should be used based on which has the largest range (post-cleaning)
   wmRanges = [-1,-1,-1,-1,-1]
   scanDir = '../RaF_RawData/'+str(mass)+'/scan_'+str(scanInd)+'/'
-  scanDataDic = {}
-  scanDataDic['has_wavemeter'] = False; scanDataDic['has_wavemeter_pdl'] = False;
   dirlist=os.listdir(scanDir)
   for i in range(len(dirlist)):
     if dirlist[i] == 'metadata_wavemeter_ds.txt':
@@ -143,25 +114,27 @@ def rawDatPrep(*args, **kwds):
   else: print("yo wtf are you doing?"); quit()
   #TODO: function description
   #print("TEST. args:", args, "\nkwds?\n",kwds)
+  if verbose: print("rawDatPrep called with m=%d, s=%d, wavenumber=%s"%(mass,scanInd,str(wavenumber)))
   scanIndex = scanInd
   wmNum = wavenumber
   wavenumberToUse = "wavenumber_"+str(wmNum)
   scanDir = '../RaF_RawData/'+str(mass)+'/scan_'+str(scanIndex)+'/'
   dSetTypes = ['iscool', 'tagger', 'wavemeter', 'wavemeter_pdl']
-  scanDataDic = {}
-  scanDataDic['has_iscool'] = False; scanDataDic['has_tagger'] = False; scanDataDic['has_wavemeter'] = False; scanDataDic['has_wavemeter_pdl'] = False;
+  has_iscool = False; has_tagger = False; has_wavemeter = False; has_wavemeter_pdl = False;
   dirlist=os.listdir(scanDir)
 
   for i in range(len(dirlist)):
     if dirlist[i]=='metadata_iscool_ds.txt':
       iscool_colNames = ['timestamp', 'offset', 'voltage']
       ic = pd.read_csv(scanDir + "iscool_ds.csv", sep=';', names=iscool_colNames)
+      #if verbose: print("isCool Voltages:\n", ic.loc[:,'voltage'])
       #betaFunc = np.vectorize(computeBeta, excluded=['m'])
-      ic['betaVals'] = ic['voltage'].map(lambda V: computeBeta(mass, V))
-      ic['dopplerShiftFactor'] = ic['voltage'].map(lambda V: dopplerCorrectionFactor(mass, V))
-      ic[['voltage','betaVals','dopplerShiftFactor']] = ic[['voltage','betaVals','dopplerShiftFactor']].apply(pd.to_numeric,downcast='float')
+      #ic.loc[:,'betaVals'] = computeBeta(mass,np.array(ic.loc[:,'voltage']))#ic['voltage'].map(lambda V: computeBeta(mass, V))
+      ic.loc[:,'dopplerShiftFactor'] = dopplerCorrectionFactor(mass,np.array(ic.loc[:,'voltage']))#.astype('float64'))#ic['voltage'].map(lambda V: dopplerCorrectionFactor(mass, V))
+      #ic.loc[:,['voltage','betaVals','dopplerShiftFactor']] = ic[['voltage','betaVals','dopplerShiftFactor']].apply(pd.to_numeric,downcast='float')
+      ic.loc[:,['voltage','dopplerShiftFactor']] = ic[['voltage','dopplerShiftFactor']].apply(pd.to_numeric,downcast='float')
       ic=ic[pd.notna(ic['timestamp'])]
-      scanDataDic['has_iscool'] = True #I want to call this bool ['is_cool'], but I guess I'll be informative instead :(
+      has_iscool = True #I want to call this bool ['is_cool'], but I guess I'll be informative instead :(
 
     elif dirlist[i] == 'metadata_tagger_ds.txt':
       #tagger_mdFile = open()
@@ -169,43 +142,40 @@ def rawDatPrep(*args, **kwds):
       tag = pd.read_csv(scanDir + "tagger_ds.csv", sep=';', names=tag_colNames, dtype={'bunch_no':'Int32', 'events_per_bunch':'Int32', 'channel':'Int8'})
       #tag['bunch_no'].apply()
       #tag['events_per_bunch'].apply()
-      tag[['bunch_no','events_per_bunch']]=tag[['bunch_no','events_per_bunch']].apply(pd.to_numeric, downcast='unsigned')
-      tag[['channel']]=tag[['channel']].apply(pd.to_numeric, downcast='integer')
+      tag.loc[:,['bunch_no','events_per_bunch']]=tag[['bunch_no','events_per_bunch']].apply(pd.to_numeric, downcast='unsigned')
+      tag.loc[:,['channel']]=tag[['channel']].apply(pd.to_numeric, downcast='integer')
       tag=tag[pd.notna(tag['timestamp'])]#4/Aug/2019. For Mass242, scan 2512, this is for some reason necessary. Looks like garbage timestamp in tagger file
-      scanDataDic['has_tagger'] = True 
+      has_tagger = True 
 
     elif dirlist[i] == 'metadata_wavemeter_ds.txt':
       wm_colNames = ['timestamp', 'offset', 'wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']
       wm = pd.read_csv(scanDir + "wavemeter_ds.csv", sep=';', names=wm_colNames)
       wm=wm[pd.notna(wm['timestamp'])]
       wm[['wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']] = wm[['wavenumber_1', 'wavenumber_2', 'wavenumber_3', 'wavenumber_4']].apply(pd.to_numeric,downcast='float')
-      scanDataDic['has_wavemeter'] = True  
+      has_wavemeter = True  
 
     elif dirlist[i] == 'metadata_wavemeter_pdl_ds.txt':
       if wavenumber == "pdl":
         pdl_colNames = ['timestamp', 'offset', 'wavenumber_pdl']
         pdl = pd.read_csv(scanDir + "wavemeter_pdl_ds.csv", sep=';', names=pdl_colNames)
         pdl=pdl[pd.notna(pdl['timestamp'])]
-        #if (cleanWM == True and wavenumber == "pdl"): pdl = wavemeterDataCleaner(pdl, wavenumberToUse)#August4/2019, going to try cleaning wm data later, as I don't want my cropping to affect count rates of correct wm measurements
-        pdl['wavenumber_pdl'] = pdl['wavenumber_pdl'].apply(pd.to_numeric,downcast='float')
-        scanDataDic['has_wavemeter_pdl'] = True
+        pdl.loc[:,'wavenumber_pdl'] = pdl['wavenumber_pdl'].apply(pd.to_numeric,downcast='float')
+        has_wavemeter_pdl = True
 
-  #Whenever channel = -1 ~(which is almost certainly intended to indicate a glitch, right?)~, events_per_bunch is invariably 0;
-  #the detector literally can't count events during those -1 intervals. And yet they're counting against my count rates. It's just a bunch of extra dead times in the denominator, I think
-  #tag["channel"]=tag["channel"].map(lambda a: float('NaN') if a < 0 else a) 
-  #tag=tag[pd.notna(tag['channel'])]
+  #Note: Whenever channel = -1 ~(which is almost certainly intended to indicate a glitch, right?)~, events_per_bunch is invariably 0;
+
   if glitchMitigation: 
     mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch','channel']]
     chans = np.array(mfouter.loc[:,'channel'])
-    mfouter["chanSums"]=pd.Series(np.append([15,15],np.append(chans[:-4]+chans[1:-3]+chans[2:-2]+chans[3:-1]+chans[4:],[15,15])), index=mfouter.index[0:])
+    mfouter.loc[:,"chanSums"]=pd.Series(np.append([15,15],np.append(chans[:-4]+chans[1:-3]+chans[2:-2]+chans[3:-1]+chans[4:],[15,15])), index=mfouter.index[0:])
   else: mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch']]
 
-  if scanDataDic['has_wavemeter']:
+  if has_wavemeter:
     mfouter = pd.merge_ordered(mfouter, wm.loc[:,['timestamp','wavenumber_1','wavenumber_2']], on='timestamp', how='outer')
-  if scanDataDic['has_iscool'] == True:
+  if has_iscool == True:
     #mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','voltage','betaVals','dopplerShiftFactor']], on='timestamp', how='outer') #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
     mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','dopplerShiftFactor']], on='timestamp', how='outer') #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
-  if scanDataDic['has_wavemeter_pdl'] and (wavenumberToUse=="wavenumber_pdl"):
+  if has_wavemeter_pdl and (wavenumberToUse=="wavenumber_pdl"):
     mfouter = pd.merge_ordered(mfouter, pdl.loc[:,['timestamp','wavenumber_pdl']], on='timestamp', how='outer')
 
   mfouter.loc[:,wavenumberToUse].fillna(method='backfill', inplace=True)
@@ -215,26 +185,22 @@ def rawDatPrep(*args, **kwds):
   #mfouter.loc[:,"wavenumber_1":"wavenumber_4"] = mfouter.loc[:,"wavenumber_1":"wavenumber_4"].fillna(method='backfill') #2/Aug/2019. It looks like this is causing a MemoryError sometimes?
   
   #Don't forget to backfill reference laser data as well, once I figure out how/when to do that... 
-  if scanDataDic['has_iscool'] == True:
+  if has_iscool == True:
        #mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']] = mfouter.loc[:,['voltage','betaVals','dopplerShiftFactor']].fillna(method='backfill') #2/Aug/2019. It looks like this is causing a MemoryError sometimes?
        #mfouter.loc[:,'voltage'].fillna(method='backfill', inplace=True) #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
        #mfouter.loc[:,'betaVals'].fillna(method='backfill', inplace=True) #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
        mfouter.loc[:,'dopplerShiftFactor'].fillna(method='backfill', inplace=True)
-  """if scanDataDic['has_wavemeter_pdl'] == True:
-       mfouter.loc[:,'wavenumber_pdl'] = mfouter.loc[:,'wavenumber_pdl'].fillna(method='backfill')"""
-  
-  #if verbose: print("TEST2:\n", mfouter.loc[:49,["timestamp","events_per_bunch", 'channel', wavenumberToUse, 'voltage' if scanDataDic['has_iscool'] == True else 'bunch_no']])
 
-  mfouter["events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a)
-  mfouter["events_per_bunch"]=mfouter["events_per_bunch"].astype('Int8',downcast='unsigned')
+  mfouter.loc[:,"events_per_bunch"]=mfouter["events_per_bunch"].map(lambda a: 1 if a > 0 else a)
+  mfouter.loc[:,"events_per_bunch"]=mfouter["events_per_bunch"].astype('Int8',downcast='unsigned')
   #remove "NaN" entries from events_per_bunch now? so that timeDiffs aren't computed including these non-counting event counts.
 
-  if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'events_per_bunch','channel',wavenumberToUse]])
+  if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'events_per_bunch',wavenumberToUse,'dopplerShiftFactor' if has_iscool else 'channel']])
   if verbose: print(mfouter.info())
   mfouter = mfouter[pd.notna(mfouter['bunch_no'])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
   #mfouter = mfouter[pd.notna(mfouter['timestamp'])]#4/Aug/2019. For Mass242, scan 2512, this is for some reason necessary. Looks like garbage timestamp in tagger file
 
-  if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","bunch_no","events_per_bunch",wavenumberToUse]])
+  if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","events_per_bunch",wavenumberToUse,'dopplerShiftFactor'] if has_iscool else 'channel'])
   tStamps = np.array(mfouter.loc[:,'timestamp']); tDiffs = tStamps[1:]-tStamps[:-1]; 
   if verbose: print('np.mean(tDiffs) = ',np.mean(tDiffs));
   assert(np.mean(tDiffs)<1) #If assertion fails, average tDiff is larger than I'd been expecting... Maybe take a look at this.
@@ -244,7 +210,7 @@ def rawDatPrep(*args, **kwds):
     mfouter[wavenumberToUse]=mfouter[wavenumberToUse].map(lambda v: v if v > 0 else float('NaN'))
     mfouter = mfouter[pd.notna(mfouter[wavenumberToUse])]
 
-  if scanDataDic['has_iscool'] == True:
+  if has_iscool == True:
     #mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]*mfouter.loc[:, 'dopplerShiftFactor'] #FOUND ERROR IN PAPER
     mfouter.loc[:,'wavenumber'] = mfouter.loc[:,wavenumberToUse]/mfouter.loc[:, 'dopplerShiftFactor']
   #print(mfouterBf.loc[:49,["timestamp","timeDiffs","bunch_no","events_per_bunch","wavenumber_2"]])
@@ -271,7 +237,7 @@ def rawDatPrep(*args, **kwds):
           break
       except OSError:
         conditionMet = False
-  
+  if verbose:print("test something:\n",mfouter.loc[:,['timestamp','timeDiffs','events_per_bunch', 'wavenumber']])
   if glitchMitigation:
     if verbose and scanInd==2178: print("TEST7:\n", mfouter.loc[mfouter.index[88800:88900],["timestamp",'timeDiffs',"events_per_bunch",'channel' if glitchMitigation else wavenumberToUse]])
     mfouter.loc[:,'channel'].fillna(method='backfill', inplace=True) #3/Aug/2019. 3:20 PM want to back-fill values _before_ I throw out all the NaNs!
@@ -291,7 +257,7 @@ def mergeDatRaw(mass, scanList,verbose=False):
   #creates dataframe of same format as rawDatPrep(), but combining multiple scans
   dfList=[]
   for scan in scanList:
-    dfList.append(rawDatPrep(mass,scan))
+    dfList.append(rawDatPrep(mass,scan,verbose=verbose))
   return(pd.concat(dfList))
 
 def trimRange(outputDF, ltrim=-1, rtrim=-1):
@@ -405,38 +371,12 @@ if __name__ == '__main__':
   output = makeUseable(mfba, nBins=numBins)
   print("test11:\n", output)
   plotData(output, mass, scanIndex, wmNum, nBins=numBins)"""
+  #doEverything(247, 2322, 2, cleanWM=True, makePlot=True, resolution=.01, verbose=True)
 
-  doEverything(247, 2322, 2, cleanWM=True, makePlot=True, resolution=.01, verbose=True)
+  m=242;scans=[2312, 2313]
+  mfba=mergeDatRaw(m,scans, verbose=True)
+  print("meep")
+  output = makeUseable(mfba, resolution=.07)
+  plotData(output, m, 2312, 2, resolution=.07)
 
-    
-  #New merging thing?
-  """
-  mass = 245
-  indices=[2170,2171,2172,2173,2175,2176]
-  wmNum = 1
-  res=.01
-
-  dfs=[]
-  for ind in indices:
-    dfs.append(rawDatPrep(mass,ind,wmNum))
-  df=pd.concat(dfs)
-  print("test whatever:\n", df)
-  audi=makeUseable(df, resolution=res)
-  print("test whatever+1:\n", audi)
-  plotData(audi, mass, indices, wmNum, resolution=res)"""
-
-  """m2=243 #Looking at diff isotope
-  indices=[2300,2302,2303,2283]
-  wmNum = 2
-  res=.1
-
-  dfs=[]
-  for ind in indices:
-    dfs.append(rawDatPrep(m2,ind,wmNum))
-  df=pd.concat(dfs)
-  print("test whatever:\n", df)
-  audi=makeUseable(df, resolution=res)
-  print("test whatever+1:\n", audi)
-  plotData(audi, m2, indices, wmNum, resolution=res)"""
-
-  plt.show()
+  #plt.show()

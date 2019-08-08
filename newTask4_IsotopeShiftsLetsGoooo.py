@@ -139,8 +139,7 @@ if __name__ == '__main__':
     plt.savefig('./FitResults/IsotopeShiftDiffTransitions_%s.png'%meth)
     plt.close()
   importTestFrame=pd.DataFrame(data=np.loadtxt('./FitResults/OutputFiles/isoShiftsFrame.csv'), index=massList, columns = pd.MultiIndex.from_product([transitionLabels,estimationMethodLabels, ['shift','error']], names=['Shifts','Methods','Stats']) )
-  with pd.option_context('display.max_rows', 100, 'display.max_columns', 30):print("Import test: Isotope Shifts:\n", importTestFrame)
-  with pd.option_context('display.max_rows', 100, 'display.max_columns', 30):print("Import test2: importTestFrame - isoShiftsFrame:\n", importTestFrame-isoShiftsFrame)
+  print("Testing data frame importability. importTestFrame==isoShiftsFrame: ", np.all((importTestFrame-isoShiftsFrame).values==0))
 
   #TODO: Isotope summary plots. Take differences
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''

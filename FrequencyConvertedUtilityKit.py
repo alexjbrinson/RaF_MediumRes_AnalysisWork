@@ -15,7 +15,6 @@ import emcee
 import time
 import numdifftools
 import LoadingAndMungingData as lmd
-import FrequencyConvertedUtilityKit as FCUK
 
 '''3. "Analyse each scan individually and extract an average "peak position" for each electronic transition "'''
 def backgroundEstimator(yArray):
@@ -43,7 +42,7 @@ def fitPlottingSubRoutine(datFrame, mass, s, r, n, fitRes, redchi=-1, currDir='.
   ax = plt.gca()
   xDat = np.array(datFrame.loc[:,'wavenumber_mean']); yDat = np.array(datFrame.loc[:,'signal_value']); ySigDat = np.array(datFrame.loc[:,'signal_uncertainty'])
   xFull = np.arange(np.min(xDat)-.05,np.max(xDat)+.05,.01)
-  plt.errorbar(xDat, yDat, yerr=ySigDat, fmt='b.-',ecolor='k', alpha=.5)
+  plt.errorbar(xDat, yDat, yerr=ySigDat, fmt='b.-',ecolor='k', alpha=.3)
   plt.fill_between(xDat, yDat,color='blue', alpha=.25)
   plt.xlabel(r'Wavenumber (cm$^{-1}$)', fontsize=18)
   plt.ylabel('rate (counts/s)', fontsize=18)
@@ -78,10 +77,10 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
 #fit scan data with rebinning to spectrum with pre-guessed peaks
   # TODO incorporate similarSigma idea!
   N = len(peaksList)
-  if len(peakSigmas) == 0:
-    peakSigmas = 2*np.ones_like(peaksList)
-  elif len(peakSigmas) == 1:
-    peakSigmas = peakSigmas*np.ones_like(peakList)
+  if type(peakSigmas)==float:
+    peakSigmas = peakSigmas*np.ones_like(peaksList)
+  elif len(peakSigmas) == 0:
+    peakSigmas = 1*np.ones_like(peaksList)
   assert(len(peakSigmas) == N)
   assert(np.all(peakSigmas>0))
   if sameSigma and (np.any(peakSigmas[1:]!=peakSigmas[0]))  :
@@ -110,6 +109,7 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
   peakModelsArray = []
   warningStatus=0
   for i in range(N):
+    print("adding peak %d to model"%i)
     k = peaksList[i]; sigmaK = peakSigmas[i] 
     #print("k=%.2f"%k)
     ind1 = np.argmin(abs(xDat-k))
@@ -128,9 +128,10 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
       estimHeight2 = yDat[ind2] - bg
       if estimHeight2>estimHeight: print("aha! Had to look left to find global maximum!")
       estimHeight = max(estimHeight,estimHeight2)'''
-    estimHeight = findLocalMax(datFrame, peaksList-.5, 1)[1,1]
+    print("findLocalMax output:", findLocalMax(datFrame, peaksList[i]-.5, 1))
+    estimHeight = findLocalMax(datFrame, peaksList[i]-.5, 1)[1,0] - bg
     print("test. new estimHeight = %.2f"%estimHeight)
-    #amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
+    amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
     #height1=amp*special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real/(peakSigmas[i]*math.sqrt(2*math.pi))
     #print("testing math stuff... amp=%.2f; height=%.2f"%(amp,height1))
     svmod = SkewedVoigtModel(prefix="sv"+str(i)+"_")
@@ -175,7 +176,10 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
     scanFrame = lmd.rawDatPrep(mass,s)
     currDir = './FitResults/Mass%dFits/Scan%sFits/'%(mass,scan)
   if not os.path.exists(currDir): os.makedirs(currDir)
-  if len(peakSigmas) == 0:
+
+  if type(peakSigmas)==float:
+    peakSigmas = peakSigmas*np.ones_like(peaksList)
+  elif len(peakSigmas) == 0:
     peakSigmas = 1*np.ones_like(peaksList)
   else:
     assert(len(peakSigmas) == len(peaksList))
@@ -196,28 +200,16 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
   for i in range(len(resList)):
     r=resList[i]
     print("resolution=", r)
-    datFrame = lmd.makeUseable(scanFrame, resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim)#TODO allow for range cropping
+    datFrame = lmd.makeUseable(scanFrame, resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=True)#TODO allow for range cropping
     (fitRes, warningStatus) = fitNPeaks(datFrame, peaksList, peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, sameSigma=sameSigma, similarSigma=similarSigma)#add other opts?
     if warningStatus == -1:
       print("That's it for this scan, boys. Don't. push. these peaks. They're. close. to. the. eeeedge. (One of the peaks is leaking out of the scan window at rebin setting%d)"%r)
       (ccrx,ccex,cdlm,cflm)=(compiledGoFs[:i], compiledCenterEsts[:i], compiledDataLocalMax[:i],compiledFitLocalMax[:i])
-      with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledFitReducedChiSq.txt'%(mass,scan,N),'wb') as outputFile:
-        outputFile.write(json.dumps(ccrx.tolist()).encode("utf-8"));
-        outputFile.close()
-      with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledCenterEsts.txt'%(mass,scan,N),'wb') as outputFile:
-        outputFile.write(json.dumps(ccex.tolist()).encode("utf-8"));
-        outputFile.close()
-      with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledDataLocalMaxima.txt'%(mass,scan,N),'wb') as outputFile:
-        outputFile.write(json.dumps(cdlm.tolist()).encode("utf-8"));
-        outputFile.close()
-      with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledFitLocalMaxima.txt'%(mass,scan,N),'wb') as outputFile:
-        outputFile.write(json.dumps(cflm.tolist()).encode("utf-8"));
-        outputFile.close()
+      ExportResults(currDir+'Mass%d_Scan%s_%dPeaks'%(mass,scan,N), [ccrx,ccex,cdlm,cflm])
       return(ccrx,ccex,cdlm,cflm)#return(compiledGoFs[:i], compiledCenterEsts[:i], compiledDataLocalMax[:i],compiledFitLocalMax[:i])
     fitReportFile = open(currDir+'Mass%dScan%s_%dbins_FitReport.txt'%(mass,scan,len(datFrame.index)),'w+')
     fitReportFile.write("Fit Report for: Mass = %d, Scan = %s, Resolution = %.3f\n"%(mass,scan,r)); fitReportFile.write(fitRes.fit_report(min_correl=0.25)); fitReportFile.close()
     compiledFitResults[r] = fitRes.best_values
-    #print("test1: type(fitRes.best_values) = ", type(fitRes.best_values) )
     compiledResults.loc[r,"FitResults"] = [fitRes.best_values]
     fitCenterEsts = np.zeros([N,2])
     fitLocalMaxEsts = np.zeros([N,2])
@@ -225,8 +217,7 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
     parmCenterNames = ['sv'+str(j)+'_center' for j in range(N)].append(['l0_slope', 'l0_intercept'])
     kwargs = {'p_names':parmCenterNames}
     print("fitRes.errorbars", fitRes.errorbars)
-    
-    #fitRes.conf_interval(**kwargs)#/Try adding some Try/Except shenannigans?
+
     for p in range(N):
       mu_p = fitRes.best_values['sv'+str(p)+'_center'];
       sigma_p = fitRes.best_values['sv'+str(p)+'_sigma'];
@@ -234,15 +225,12 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
       skew_p = fitRes.best_values['sv'+str(p)+'_skew'];
       mu_pUncert = fitRes.params['sv'+str(p)+'_center'].stderr if fitRes.errorbars else max(sigma_p, gamma_p)
       xSimp = np.arange(mu_p-(sigma_p+gamma_p),mu_p+(sigma_p+gamma_p),.01); ySimp=skewedVoigt(xSimp,1,mu_p,sigma_p,gamma_p,skew_p)
-      fitLocMax_p = xSimp[np.argmax(ySimp)]; #cropDat = trimRange(datFrame.copy(),ltrim=fitLocMax_p-.5,rtrim=fitLocMax_p+.5);
-      #xCrop=np.array(cropDat['wavenumber_mean']); yCrop=np.array(cropDat['signal_value']); datLocMax = xCrop[np.argmax(yCrop)]; datLocalMax=xCrop[np.argmax(yCrop)]
-      #cropDat = np.array(trimRange(datFrame.copy(),ltrim=fitLocMax_p-.5,rtrim=fitLocMax_p+.5)["wavenumber_mean","signal_value"]);
-      '''cropDat=trimRange(datFrame.copy(),ltrim=fitLocMax_p-.5,rtrim=fitLocMax_p+.5)["wavenumber_mean","signal_value"].sort_values(by="signal_value")
-      xValsBySig = np.array(cropDat.loc[:,"wavenumber_mean"])'''
+      fitLocMax_p = xSimp[np.argmax(ySimp)]; 
       datLocalEst_p = findLocalMax(datFrame, fitLocMax_p, 0.5, uncertIndex=3)
       fitCenterEsts[p, 0] = mu_p; fitCenterEsts[p,1] = mu_pUncert
       fitLocalMaxEsts[p,0] = fitLocMax_p; fitLocalMaxEsts[p,1] = mu_pUncert
       datLocalMaxEsts[p,0] = datLocalEst_p[0,0] ; datLocalMaxEsts[p,1] = datLocalEst_p[0,1]
+
     if makePlots == True: fitPlottingSubRoutine(datFrame, mass, s, r, N, fitRes, redchi=fitRes.redchi, currDir=currDir)
     compiledCenterEsts[i,:,:] = fitCenterEsts
     compiledDataLocalMax[i,:,:] = datLocalMaxEsts
@@ -265,30 +253,30 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
   compiledResultsFile.write('Mass: %d ; Scan: %s\nInitial peak center estimates:'%(mass,scan)+str(peaksList)); compiledResultsFile.write('\nInitial peak width estimates:'+ str(peakSigmas));
   compiledResultsFile.write("\nCompilation of Results:\n")
   compiledResultsFile.write("Final Center Estimate:\n%s\nFinal Local Max Ests from fits:\n%s\nFinal Local Max Ests from data:\n%s\n"%(str(finCenterEst),str(finFitLocMaxEst),str(finDatLocMaxEst)));
-  with pd.option_context('display.max_rows', 100, 'display.max_columns', 200): compiledResultsFile.write(compiledResults.to_csv());
-  compiledResultsFile.close()
+  with pd.option_context('display.max_rows', 100, 'display.max_columns', 200): compiledResultsFile.write(compiledResults.to_csv()); compiledResultsFile.close()
+  ExportResults(currDir+'Mass%d_Scan%s_%dPeaks'%(mass,scan,N), [ccrx,ccex,cdlm,cflm])
 
-  with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledFitReducedChiSq.txt'%(mass,scan,N),'wb') as outputFile: #,'w+') as outputFile:#?
-    outputFile.write(json.dumps(ccrx.tolist()).encode("utf-8"));
-    outputFile.close()
-  with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledCenterEsts.txt'%(mass,scan,N),'wb') as outputFile:
-    outputFile.write(json.dumps(ccex.tolist()).encode("utf-8"));
-    outputFile.close()
-  with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledDataLocalMaxima.txt'%(mass,scan,N),'wb') as outputFile:
-    outputFile.write(json.dumps(cdlm.tolist()).encode("utf-8"));
-    outputFile.close()
-  with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledFitLocalMaxima.txt'%(mass,scan,N),'wb') as outputFile:
-    outputFile.write(json.dumps(cflm.tolist()).encode("utf-8"));
-    outputFile.close()
   if spreadPlot==True:
     MultiBinSpreadPlotter(mass, scan, ccex, resList, currDir=currDir)
     MultiBinSpreadPlotter(mass, scan, cdlm, resList, currDir=currDir, quantity="local maxima from data")
     MultiBinSpreadPlotter(mass, scan, cflm, resList, currDir=currDir, quantity="local maxima from fits")
   return(ccrx,ccex,cdlm,cflm) #TODO?: get peak estimates, apply them to next fit. Carry out next fit(s) -> Nahhh
 
-def ExportResults(dir, resultsTuple, resList):
+def ExportResults(filePrefix, resultsList):
   #exports fitScanX() results to json files. TODO
-  pass
+  ccrx=resultsList[0]; ccex=resultsList[1]; cdlm=resultsList[2]; cflm=resultsList[3]
+  with open(filePrefix+'-CompiledFitReducedChiSq.txt','wb') as outputFile: #,'w+') as outputFile:#?
+    outputFile.write(json.dumps(ccrx.tolist()).encode("utf-8"));
+    outputFile.close()
+  with open(filePrefix+'-CompiledCenterEsts.txt','wb') as outputFile:
+    outputFile.write(json.dumps(ccex.tolist()).encode("utf-8"));
+    outputFile.close()
+  with open(filePrefix+'-CompiledDataLocalMaxima.txt','wb') as outputFile:
+    outputFile.write(json.dumps(cdlm.tolist()).encode("utf-8"));
+    outputFile.close()
+  with open(filePrefix+'-CompiledFitLocalMaxima.txt','wb') as outputFile:
+    outputFile.write(json.dumps(cflm.tolist()).encode("utf-8"));
+    outputFile.close()
 
 def MultiBinSpreadPlotter(mass, scan, compRay, resList, quantity="Center Parameter", currDir='./'):
   finScanEsts = scanFitsFinalEsts(compRay)
@@ -364,8 +352,7 @@ def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np
   resolutionList=resList
   N = len(initCenterEsts)
   fileCondits = os.path.exists(currDir+'Mass%d_Scan%s_%dPeaks-CompiledCenterEsts.txt'%(mass,scan,N)) and os.path.exists(currDir+'Mass%d_Scan%s_%dPeaks-CompiledFitLocalMaxima.txt'%(mass,scan,N))
-  #print("ccex found?",os.path.exists(currDir+'Mass%d_Scan%s_%dPeaks-CompiledCenterEsts.txt'%(mass,scan,N)))
-  #print("cflm found?",os.path.exists(currDir+'Mass%d_Scan%s_%dPeaks-CompiledFitLocalMaxima.txt'%(mass,scan,N)))
+  #print("ccex found?",os.path.exists(currDir+'Mass%d_Scan%s_%dPeaks-CompiledCenterEsts.txt'%(mass,scan,N))); print("cflm found?",os.path.exists(currDir+'Mass%d_Scan%s_%dPeaks-CompiledFitLocalMaxima.txt'%(mass,scan,N)))
   if (fileCondits and (rewrite==False)):
     print("Success!")
     with open(currDir+'Mass%d_Scan%s_%dPeaks-CompiledCenterEsts.txt'%(mass,scan,N),'r') as ccexFile:
@@ -404,11 +391,8 @@ def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np
   return({'fce':fce,'fdl':fdl,'ffl':ffl})
 
 if __name__ == '__main__':
-  pd.options.mode.chained_assignment = None  # default='warn'
-  rewrite=True
-  ltrim=13256.5; rtrim=13287
-  sameSigma=True
-  idx = pd.IndexSlice
+  pd.options.mode.chained_assignment = None  # default='warn' (Pandas keep harassing me and I'm doing nothing wrong!)
+  rewrite=True; ltrim=13256.5; rtrim=13287; sameSigma=True
   massList=np.array([242,243,244,245, 247])
   allScansBigDic = {}
   for m in massList: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
@@ -421,15 +405,12 @@ if __name__ == '__main__':
   massScanDic[247]=[2311,2322]#,[2188,2190](also decent, but from diff era with different rates)
   initCenterEsts=[13284.75,13278.62,13272.50,13266.5]#,13260.35]
   transitionLabels = np.array(["%d->%d"%(i,i) for i in range(len(initCenterEsts))])
-  estimationMethodLabels = np.array(['SkewedMu','LocMaxDat','LocMaxFit'])
-  estimationStatisticsLabels = np.array(['mean','stderr','range'])
-  sigmaEst=.55
-  gammaEst=1.77
-  skew0=-2
+  sigmaEst=.55; gammaEst=1.77; skew0=-2
   resolutionList=[.01,.02,.05,.1,.2,.5]
 
-'''  for m in massList:
+  for m in massList:
     s=massScanDic[m]
     peakList=initCenterEsts
-    finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peakList=peakList,peakSigmas=sigmaEst*np.ones_like(peakList),sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=True, useWeights=True, skew0=-4)
-    (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])'''
+    print("m=%d, scans:%s, peakList:%s"%(m,str(s),str(peakList)))
+    finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peakList=peakList,peakSigmas=sigmaEst, sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=True, useWeights=True, skew0=skew0)
+    (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])
