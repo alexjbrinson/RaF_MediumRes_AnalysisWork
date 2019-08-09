@@ -398,19 +398,24 @@ if __name__ == '__main__':
   for m in massList: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
   colorDict={242:'red', 243:'orange',244:'green',245:'blue',247:'purple'}
   massScanDic={}
-  massScanDic[242]=[2312, 2313] #These are good individually and combined!
-  massScanDic[243]=[2302,2303,2308]#2300? #2283(from a different time, when signals weren't as strong. use in future), 2301("wavemeter stopped working in the middle of a peak" + relatively weak signal)
-  massScanDic[244]=[2304,2305,2306]#,2307] #possibly remove 2307?
-  massScanDic[245]=[2309,2310,2320]#, [2341(75mW),2349],2350("re-tuned TiSa overlap upstairs --> additional 50% improvement")]#,[2346] is a pdl scan though. gross...#2178 is Ti:Sa, but actually gross af#
-  massScanDic[247]=[2311,2322]#,[2188,2190](also decent, but from diff era with different rates)
-  initCenterEsts=[13284.75,13278.62,13272.50,13266.5]#,13260.35]
-  transitionLabels = np.array(["%d->%d"%(i,i) for i in range(len(initCenterEsts))])
-  sigmaEst=.55; gammaEst=1.77; skew0=-2
-  resolutionList=[.01,.02,.05,.1,.2,.5]
+  massScanDic[242]=[[2312, 2313]] #These are good individually and combined!
+  massScanDic[243]=[[2302,2303,2308],2283]#2300? #2283(from a different time, when signals weren't as strong. use in future), 2301("wavemeter stopped working in the middle of a peak" + relatively weak signal)
+  massScanDic[244]=[[2304,2305,2306]]#,2307] #possibly remove 2307?
+  massScanDic[245]=[[2309,2310,2320],[2341,2349],2350]#, [2341(75mW),2349],2350("re-tuned TiSa overlap upstairs --> additional 50% improvement")]#,[2346] is a pdl scan though. gross...#2178 is Ti:Sa, but actually gross af#
+  massScanDic[247]=[[2311,2322],[2188,2190]]#(also decent, but from diff era with different rates)
+  initCenterEsts={}
+  initCenterEsts[242]=[13285,13278.86,13272.76,13266.76]#,13260.35]
+  initCenterEsts[243]=[13284.91,13278.79,13272.64,13266.56]#,13260.35]
+  initCenterEsts[244]=[13284.85,13278.70,13272.66,13266.45]#,13260.35]
+  initCenterEsts[245]=[13284.73,13278.60,13272.46,13266.48]#,13260.35]
+  initCenterEsts[247]=[13284.54,13278.41,13272.24,13266.05]#,13260.35]
+  sigmaEst=.7; gammaEst=1.65; skew0=-3
+  resolutionList=[.01,.02,.03,.05,.07,.1,.2,.5] #Honestly maybe just revert to previous fits. These ones were worse on average for some reason... :/
 
   for m in massList:
-    s=massScanDic[m]
-    peakList=initCenterEsts
-    print("m=%d, scans:%s, peakList:%s"%(m,str(s),str(peakList)))
-    finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peakList=peakList,peakSigmas=sigmaEst, sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=True, useWeights=True, skew0=skew0)
-    (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])
+    scanListsList = massScanDic[m]
+    peakList = initCenterEsts[m]
+    for s in scanListsList:
+      print("m=%d, scans:%s, peakList:%s"%(m,str(s),str(peakList)))
+      finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peakList=peakList,peakSigmas=sigmaEst, sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=True, useWeights=True, skew0=skew0)
+      (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])
