@@ -54,7 +54,7 @@ def whichWavemeter(mass, scanInd, verbose=False):
       wm = pd.read_csv(scanDir + "wavemeter_ds.csv", sep=';', names=wm_colNames)
       for i in [1,2,3,4]:
         wmArray = np.array(wm['wavenumber_'+str(i)])
-        wmFiltered = np.ma.compressed(np.ma.masked_less(wmArray, 0))
+        wmFiltered = np.ma.compressed(np.ma.masked_less(wmArray, 1))
         if verbose: print("whichWavemeterTest1: wmFiltered:\n", wmFiltered)
         if len(wmFiltered)==0: wmRanges[i]=-1
         else: wmRanges[i] = np.max(wmFiltered)- np.min(wmFiltered)
@@ -63,7 +63,7 @@ def whichWavemeter(mass, scanInd, verbose=False):
         pdl_colNames = ['timestamp', 'offset', 'wavenumber_pdl']
         pdl = pd.read_csv(scanDir + "wavemeter_pdl_ds.csv", sep=';', names=pdl_colNames)
         pdlArray = np.array(pdl['wavenumber_pdl'])
-        pdlFiltered = np.ma.compressed(np.ma.masked_less(pdlArray, 0))
+        pdlFiltered = np.ma.compressed(np.ma.masked_less(pdlArray, 1))
         if verbose: print("whichWavemeterTest1: pdlFiltered:\n", pdlFiltered)
         if len(pdlFiltered)==0: wmRanges[0]=-1
         else: wmRanges[0] = np.max(pdlFiltered)- np.min(pdlFiltered)
@@ -169,9 +169,9 @@ def rawDatPrep(*args, **kwds):
     chans = np.array(mfouter.loc[:,'channel'])
     mfouter.loc[:,"chanSums"]=pd.Series(np.append([15,15],np.append(chans[:-4]+chans[1:-3]+chans[2:-2]+chans[3:-1]+chans[4:],[15,15])), index=mfouter.index[0:])
   else: mfouter = tag.loc[:,['timestamp','bunch_no','events_per_bunch']]
-
-  if has_wavemeter:
-    mfouter = pd.merge_ordered(mfouter, wm.loc[:,['timestamp','wavenumber_1','wavenumber_2']], on='timestamp', how='outer')
+  if (has_wavemeter_pdl==False and wavenumber=="pdl"): print("what the frick? this scan doesn't even have a pdl file, dummy!")
+  if has_wavemeter and type(wavenumber)==int:
+    mfouter = pd.merge_ordered(mfouter, wm.loc[:,['timestamp',wavenumberToUse]], on='timestamp', how='outer')#'wavenumber_1','wavenumber_2','wavenumber_3','wavenumber_4']], on='timestamp', how='outer')
   if has_iscool == True:
     #mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','voltage','betaVals','dopplerShiftFactor']], on='timestamp', how='outer') #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
     mfouter = pd.merge_ordered(mfouter, ic.loc[:,['timestamp','dopplerShiftFactor']], on='timestamp', how='outer') #2/Aug/2019. only keeping dopplerShiftFactor to further reduce data usage
@@ -195,12 +195,12 @@ def rawDatPrep(*args, **kwds):
   mfouter.loc[:,"events_per_bunch"]=mfouter["events_per_bunch"].astype('Int8',downcast='unsigned')
   #remove "NaN" entries from events_per_bunch now? so that timeDiffs aren't computed including these non-counting event counts.
 
-  if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'events_per_bunch',wavenumberToUse,'dopplerShiftFactor' if has_iscool else 'channel']])
+  if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'events_per_bunch',wavenumberToUse,'dopplerShiftFactor' if has_iscool else None]])
   if verbose: print(mfouter.info())
   mfouter = mfouter[pd.notna(mfouter['bunch_no'])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
   #mfouter = mfouter[pd.notna(mfouter['timestamp'])]#4/Aug/2019. For Mass242, scan 2512, this is for some reason necessary. Looks like garbage timestamp in tagger file
 
-  if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","events_per_bunch",wavenumberToUse,'dopplerShiftFactor'] if has_iscool else 'channel'])
+  if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp","events_per_bunch",wavenumberToUse,'dopplerShiftFactor' if has_iscool else None]])
   tStamps = np.array(mfouter.loc[:,'timestamp']); tDiffs = tStamps[1:]-tStamps[:-1]; 
   if verbose: print('np.mean(tDiffs) = ',np.mean(tDiffs));
   assert(np.mean(tDiffs)<1) #If assertion fails, average tDiff is larger than I'd been expecting... Maybe take a look at this.
@@ -371,12 +371,12 @@ if __name__ == '__main__':
   output = makeUseable(mfba, nBins=numBins)
   print("test11:\n", output)
   plotData(output, mass, scanIndex, wmNum, nBins=numBins)"""
-  #doEverything(247, 2322, 2, cleanWM=True, makePlot=True, resolution=.01, verbose=True)
+  #doEverything(234, 2127,)
 
-  m=242;scans=[2312, 2313]
+  '''m=242;scans=[2312, 2313]
   mfba=mergeDatRaw(m,scans, verbose=True)
   print("meep")
   output = makeUseable(mfba, resolution=.07)
   plotData(output, m, 2312, 2, resolution=.07)
-
-  #plt.show()
+'''
+  plt.show()
