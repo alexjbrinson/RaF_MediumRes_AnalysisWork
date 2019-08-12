@@ -128,6 +128,7 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
       estimHeight2 = yDat[ind2] - bg
       if estimHeight2>estimHeight: print("aha! Had to look left to find global maximum!")
       estimHeight = max(estimHeight,estimHeight2)'''
+    locMaxOutput = findLocalMax(datFrame, peaksList[i]-.5, 1, uncertIndex=4)
     print("findLocalMax output:", findLocalMax(datFrame, peaksList[i]-.5, 1))
     estimHeight = findLocalMax(datFrame, peaksList[i]-.5, 1)[1,0] - bg
     print("test. new estimHeight = %.2f"%estimHeight)

@@ -1,0 +1,48 @@
+Fit Report for: Mass = 247, Scan = [2188, 2190], Resolution = 0.500
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 23680
+    # data points      = 62
+    # variables        = 13
+    chi-square         = 0.01790389
+    reduced chi-square = 3.6539e-04
+    Akaike info crit   = -479.292043
+    Bayesian info crit = -451.639296
+##  Warning: uncertainties could not be estimated:
+    sv0_center:     at initial value
+    sv1_center:     at initial value
+    sv2_center:     at initial value
+    sv3_amplitude:  at boundary
+[[Variables]]
+    l0_slope:       0.00144883 (init = 0)
+    l0_intercept:   7.43106927 (init = 25.73637)
+    sv0_sigma:      0.10024113 (init = 0.7)
+    sv0_skew:      -3.40231063 (init = -2)
+    sv0_amplitude:  56.8354327 (init = 77.63037)
+    sv0_center:     13284.4595 (init = 13284.54)
+    sv0_gamma:      1.53700788 (init = 1.65)
+    sv0_height:     226.195165 == '0.3989423*sv0_amplitude/max(1.e-15, sv0_sigma)'
+    sv0_fwhm:       0.36099937 == '3.6013100*sv0_sigma'
+    sv1_sigma:      0.10024113 == 'sv0_sigma'
+    sv1_skew:      -3.40231063 == 'sv0_skew'
+    sv1_amplitude:  36.2706525 (init = 56.14181)
+    sv1_center:     13278.5158 (init = 13278.41)
+    sv1_gamma:      1.53700788 == 'sv0_gamma'
+    sv1_height:     144.350906 == '0.3989423*sv1_amplitude/max(1.e-15, sv1_sigma)'
+    sv1_fwhm:       0.36099937 == '3.6013100*sv1_sigma'
+    sv2_sigma:      0.10024113 == 'sv0_sigma'
+    sv2_skew:      -3.40231063 == 'sv0_skew'
+    sv2_amplitude:  15.2822510 (init = 27.41055)
+    sv2_center:     13272.1295 (init = 13272.24)
+    sv2_gamma:      1.53700788 == 'sv0_gamma'
+    sv2_height:     60.8207083 == '0.3989423*sv2_amplitude/max(1.e-15, sv2_sigma)'
+    sv2_fwhm:       0.36099937 == '3.6013100*sv2_sigma'
+    sv3_sigma:      0.10024113 == 'sv0_sigma'
+    sv3_skew:      -3.40231063 == 'sv0_skew'
+    sv3_amplitude:  2.32559672 (init = 9.856561)
+    sv3_center:     13266.6250 (init = 13266.05)
+    sv3_gamma:      1.53700788 == 'sv0_gamma'
+    sv3_height:     9.25547162 == '0.3989423*sv3_amplitude/max(1.e-15, sv3_sigma)'
+    sv3_fwhm:       0.36099937 == '3.6013100*sv3_sigma'
