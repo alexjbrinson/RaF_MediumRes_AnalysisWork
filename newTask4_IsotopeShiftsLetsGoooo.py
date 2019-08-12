@@ -71,7 +71,7 @@ def shiftVsMassPlotter_OneMethodSlice(shiftsFrame, i, saveFig=True, closeFig=Tru
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''
 if __name__ == '__main__':
   pd.options.mode.chained_assignment = None  # default='warn'
-  rewrite=False; importDataFrames=True
+  rewrite=False; importDataFrames=False
   ltrim=13256.5; rtrim=13287
   sameSigma=True
   idx = pd.IndexSlice
@@ -144,7 +144,7 @@ if __name__ == '__main__':
   plt.yticks(ticks=range(len(estimationMethodLabels)),labels=estimationMethodLabels, fontsize=18)
   plt.legend(loc='best', fontsize=18)
   plt.savefig('./FitResults/IsotopeDataFrameSummaryPlot')
-  plt.close()
+  #plt.close()
  
   isoShiftsFrame = makeShiftFrame(isotopeDataFrame, refMass=245, errorsFrom='stderr', fileWrite=True)
   with pd.option_context('display.max_rows', 10, 'display.max_columns', 10):print("Isotope Shifts:\n",isoShiftsFrame)

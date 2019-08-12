@@ -73,7 +73,7 @@ def fitPlottingSubRoutine(datFrame, mass, s, r, n, fitRes, redchi=-1, currDir='.
   plt.close()
 
 
-def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', useWeights=True, sameSkew=True, skewList=np.array([]), skew0="NaN", initGamma=1,sameSigma=True, similarSigma=True):
+def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', useWeights=True, sameSkew=True, skewList=np.array([]), skew0="NaN", initGamma=1,sameSigma=True, similarSigma=True, BolzmannHeights=False, T=-1,Ei=-1, attempt=1):
 #fit scan data with rebinning to spectrum with pre-guessed peaks
   # TODO incorporate similarSigma idea!
   N = len(peaksList)
@@ -108,53 +108,61 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
   params = lmod.make_params(intercept=bg, slope=0)
   peakModelsArray = []
   warningStatus=0
+
+  #Putting Height estimation for peak 0 here just so I can allow for Boltzmann estimates in the future
+  locMaxOutput = findLocalMax(datFrame, peaksList[0]-.5, 1, uncertIndex=4)
+  estimHeight0 = (locMaxOutput[1,0]-locMaxOutput[1,1]/2) - bg #I'm subtracting off half of the "uncertainty" from my height estimate, so random spikes won't ruing my initial guess on noisier scans
+  amp0=estimHeight0*(peakSigmas[0]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[0]*math.sqrt(2))).real
+
+  #Beginning to add peaks to fit and guess initial parameter values
   for i in range(N):
-    print("adding peak %d to model"%i)
     k = peaksList[i]; sigmaK = peakSigmas[i] 
-    #print("k=%.2f"%k)
     ind1 = np.argmin(abs(xDat-k))
-    #print("ind1=%d"%ind1)
-    ind2 = np.argmax(yDat[ind1-2:ind1+3])+ind1-2
-    estimHeight = yDat[ind2] - bg
     #print("testing estims... bg=%d, i=%d, k=%.2f, ind1=%d, ind2=%d, xDat[ind2]=%.2f, yDat[ind2=]%.2f, estimHeight=%.2f"%(bg, i,k,ind1,ind2,xDat[ind2],yDat[ind2],estimHeight))
     if ind1 <= 3 or len(xDat)-ind1<=3:
       print("WARNING: Peak occurs too closely to edge of dataset. A lower rebin setting is recommended.")
       warningStatus=-1
       return(False, warningStatus)
-    '''if k-.66>xDat[8]:
-      k2 = peaksList[i] -.66; #pea8ksList[i], may be the "center", but it might not be where distribution is maximized. -.66 cm^{-1} is the shift for gamma=1.5,sigma=.8,skew=-2
-      ind1 = np.argmin(abs(xDat-k2))
-      ind2 = np.argmax(yDat[ind1-7:ind1+8])+ind1-7
-      estimHeight2 = yDat[ind2] - bg
-      if estimHeight2>estimHeight: print("aha! Had to look left to find global maximum!")
-      estimHeight = max(estimHeight,estimHeight2)'''
-    locMaxOutput = findLocalMax(datFrame, peaksList[i]-.5, 1, uncertIndex=4)
-    print("findLocalMax output:", findLocalMax(datFrame, peaksList[i]-.5, 1))
-    estimHeight = findLocalMax(datFrame, peaksList[i]-.5, 1)[1,0] - bg
-    print("test. new estimHeight = %.2f"%estimHeight)
-    amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
+    if i==0: amp=amp0; print("Adding peak %d to model. new estimHeight = %.2f"%(i,estimHeight0))
+    elif (BolzmannHeights and i>0) and (T>0 and Ei>0):
+      kBoltzmann = 0.695035 #Boltzmann constant in cm^-1/k (aka give energies Ei as cm^-1)
+      propFactor = math.exp(-i*Ei/(T*kBoltzmann))
+      print("test: propFactor=%.3f"%propFactor)
+      amp=propFactor*amp0
+    else:
+      locMaxOutput = findLocalMax(datFrame, peaksList[i]-.5, 1, uncertIndex=4)
+      estimHeight = (locMaxOutput[1,0]-locMaxOutput[1,1]/2) - bg #I'm subtracting off half of the "uncertainty" from my height estimate, so random spikes won't ruing my initial guess on noisier scans
+      print("Adding peak %d to model. new estimHeight = %.2f"%(i,estimHeight))
+      amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
+    
     #height1=amp*special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real/(peakSigmas[i]*math.sqrt(2*math.pi))
     #print("testing math stuff... amp=%.2f; height=%.2f"%(amp,height1))
     svmod = SkewedVoigtModel(prefix="sv"+str(i)+"_")
     svmod.set_param_hint('center', value=peaksList[i], min=max(peaksList[i]-2*peakSigmas[i], xDat[3]), max=min(peaksList[i]+2*peakSigmas[i],xDat[-3]))
-    svmod.set_param_hint('sigma', value=peakSigmas[i], min=0.1, max=2*peakSigmas[i])
+    svmod.set_param_hint('sigma', value=peakSigmas[i], min=0.1, max=4)
     #svmod.set_param_hint('amplitude', value=estimHeight*((initGamma+peakSigmas[i])/(1*.45)), min=3*np.mean(ySigDat))
     #svmod.set_param_hint('amplitude', value=amp, min=3*np.mean(ySigDat))
-    svmod.set_param_hint('amplitude', value=amp*.6, min=3*np.mean(ySigDat))#?
+    svmod.set_param_hint('amplitude', value=amp*.5, min=3*np.mean(ySigDat))#?
     svmod.set_param_hint('skew', value = skewList[i], min=-12,max=12)
     peakModelsArray.append(svmod)
     params += svmod.make_params()#svmod.guess(yDat, x=xDat)#
-    if i == 0: params['sv'+str(i)+'_gamma']= Parameter(value=initGamma, min=0, max = 3*peakSigmas[i], vary=True)
+    if i == 0: params['sv'+str(i)+'_gamma']= Parameter(value=initGamma, min=0, max = 4, vary=True)
     elif i>0:
       params['sv'+str(i)+'_gamma'] = Parameter(expr='sv0_gamma')
       if sameSkew: params['sv'+str(i)+'_skew'] = Parameter(expr='sv0_skew')
       if sameSigma: params['sv'+str(i)+'_sigma'] = Parameter(expr='sv0_sigma')
 
+
   mod = np.sum(peakModelsArray)+lmod
   print("parameters initialized. Starting fit now.")
   if useWeights: fitResult=mod.fit(yDat, params, x=xDat, method=method, weights=(1/np.square(ySigDat))/np.sum(1/np.square(ySigDat)) )
   else: fitResult=mod.fit(yDat, params, x=xDat, method=method)
-  return(fitResult, warningStatus)
+  if fitResult.errorbars: return(fitResult, warningStatus)
+  else:
+    if attempt==3: print("this was the 3rd attempt and we still couldn't give errorbars. I give up :/"); return(fitResult, warningStatus)
+    else:
+      print("Fook... Attempt %d unsuccessful. Will attempt again with something changed?"%attempt)
+      return(fitNPeaks(datFrame, peaksList+0.05*attempt*np.ones_like(peaksList), peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, sameSigma=sameSigma, similarSigma=similarSigma, method=method,attempt=attempt+1))
 
 def findLocalMax(datFrame, guess, searchWidth, xcol="wavenumber_mean",ycol="signal_value", uncertIndex=3, verbose=False):
   cropDat=lmd.trimRange(datFrame.copy(),ltrim=guess-searchWidth,rtrim=guess+searchWidth).loc[:,[xcol,ycol]].sort_values(by=ycol,ascending=False)
@@ -172,7 +180,8 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
   if type(s) == list:
     print("ooh boy! We're doing some combo fits today, buddy!")
     scanFrame = lmd.mergeDatRaw(mass, s)
-    currDir = './FitResults/Mass%dFits/CombinedScanFits/'%mass
+    #currDir = './FitResults/Mass%dFits/CombinedScanFits/'%mass
+    currDir = './FitResults/Mass%dFits/Scan%sFits/'%(mass,scan)
   else:
     scanFrame = lmd.rawDatPrep(mass,s)
     currDir = './FitResults/Mass%dFits/Scan%sFits/'%(mass,scan)
@@ -201,7 +210,7 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
   for i in range(len(resList)):
     r=resList[i]
     print("resolution=", r)
-    datFrame = lmd.makeUseable(scanFrame, resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=True)#TODO allow for range cropping
+    datFrame = lmd.makeUseable(scanFrame, resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=False)
     (fitRes, warningStatus) = fitNPeaks(datFrame, peaksList, peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, sameSigma=sameSigma, similarSigma=similarSigma)#add other opts?
     if warningStatus == -1:
       print("That's it for this scan, boys. Don't. push. these peaks. They're. close. to. the. eeeedge. (One of the peaks is leaking out of the scan window at rebin setting%d)"%r)
@@ -212,21 +221,21 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1,resList=[.
     fitReportFile.write("Fit Report for: Mass = %d, Scan = %s, Resolution = %.3f\n"%(mass,scan,r)); fitReportFile.write(fitRes.fit_report(min_correl=0.25)); fitReportFile.close()
     compiledFitResults[r] = fitRes.best_values
     compiledResults.loc[r,"FitResults"] = [fitRes.best_values]
-    fitCenterEsts = np.zeros([N,2])
-    fitLocalMaxEsts = np.zeros([N,2])
-    datLocalMaxEsts = np.zeros([N,2])
+    fitCenterEsts = np.zeros([N,2]); fitLocalMaxEsts = np.zeros([N,2]); datLocalMaxEsts = np.zeros([N,2])
     parmCenterNames = ['sv'+str(j)+'_center' for j in range(N)].append(['l0_slope', 'l0_intercept'])
     kwargs = {'p_names':parmCenterNames}
     print("fitRes.errorbars", fitRes.errorbars)
-
+    xDat = np.array(datFrame.loc[:,'wavenumber_mean']); xFull = np.arange(np.min(xDat)-.05,np.max(xDat)+.05,.01)
+    comps = fitRes.eval_components(x=xFull)
     for p in range(N):
       mu_p = fitRes.best_values['sv'+str(p)+'_center'];
-      sigma_p = fitRes.best_values['sv'+str(p)+'_sigma'];
+      mu_pUncert = fitRes.params['sv'+str(p)+'_center'].stderr if fitRes.errorbars else max(sigma_p, gamma_p)
+      '''sigma_p = fitRes.best_values['sv'+str(p)+'_sigma'];
       gamma_p = fitRes.best_values['sv'+str(p)+'_gamma'];
       skew_p = fitRes.best_values['sv'+str(p)+'_skew'];
-      mu_pUncert = fitRes.params['sv'+str(p)+'_center'].stderr if fitRes.errorbars else max(sigma_p, gamma_p)
       xSimp = np.arange(mu_p-(sigma_p+gamma_p),mu_p+(sigma_p+gamma_p),.01); ySimp=skewedVoigt(xSimp,1,mu_p,sigma_p,gamma_p,skew_p)
-      fitLocMax_p = xSimp[np.argmax(ySimp)]; 
+      fitLocMax_p = xSimp[np.argmax(ySimp)];''' #WTF? Is my skewedVoigt function not good enough for you, bitch!? (p.s. it looks like no, it's not...)
+      fitLocMax_p=xFull[np.argmax(comps['sv'+str(p)+'_'])];
       datLocalEst_p = findLocalMax(datFrame, fitLocMax_p, 0.5, uncertIndex=3)
       fitCenterEsts[p, 0] = mu_p; fitCenterEsts[p,1] = mu_pUncert
       fitLocalMaxEsts[p,0] = fitLocMax_p; fitLocalMaxEsts[p,1] = mu_pUncert
@@ -287,7 +296,7 @@ def MultiBinSpreadPlotter(mass, scan, compRay, resList, quantity="Center Paramet
   colorCoding=['red','orange','yellow','green','blue','purple']
   yVals = np.arange(len(compRay[:,0,0]))
   for p in range(len(compRay[0,:,0])):
-    plt.gca().add_patch(Rectangle((finScanEsts[p,0]-3*finScanEsts[p,1], yVals[0]-1), 6*finScanEsts[p,1], yVals[-1]+1, color=colorCoding[p], alpha=.25))
+    plt.gca().add_patch(Rectangle((finScanEsts[p,0]-finScanEsts[p,2], yVals[0]-1), 2*finScanEsts[p,2], yVals[-1]+1, color=colorCoding[p], alpha=.25))
     plt.axvline(finScanEsts[p,0], ymin=0, ymax=1, color=colorCoding[p], linestyle='--')
     plt.errorbar(compRay[:,p,0], yVals, xerr=compRay[:,p,1], fmt='o', color=colorCoding[p], markeredgecolor='black', markersize=7, label="Peak %d"%(p+1))
     #plt.annotate()#maybe TODO: label final ests with one of these instead?
@@ -295,7 +304,7 @@ def MultiBinSpreadPlotter(mass, scan, compRay, resList, quantity="Center Paramet
   plt.xlabel(r'$\nu (cm)^{-1}$', fontsize=16)
   plt.ylabel("Resolution Setting", fontsize=16)
   plt.yticks(ticks=yVals,labels=resList)
-  plt.xticks(ticks=finScanEsts[:,0], labels=['%.3f'%p for p in finScanEsts[:,0]])
+  plt.xticks(ticks=finScanEsts[:,0], labels=[r'$%.3f \pm %.3f$'%(finScanEsts[i,0],finScanEsts[i,1]) for i in range(len(finScanEsts[:,0]))])
   plt.ylim([-.5, yVals[-1]+.5])
   plt.xlim(plt.gca().get_xlim())
   #box = plt.gca().get_position()
@@ -345,9 +354,9 @@ def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np
   m = mass
   scan = str(s)
   print("Now running Scanalyzer for mass = %d; scan: %s"%(mass, scan))
-  if type(s) == list: currDir = './FitResults/Mass%dFits/CombinedScanFits/'%mass
-  else: currDir = './FitResults/Mass%dFits/Scan%sFits/'%(mass,scan)
-    
+  '''if type(s) == list: currDir = './FitResults/Mass%dFits/CombinedScanFits/'%mass
+  else: currDir = './FitResults/Mass%dFits/Scan%sFits/'%(mass,scan)'''
+  currDir = './FitResults/Mass%dFits/Scan%sFits/'%(mass,scan)  
   initCenterEsts=peakList
   initWidthEsts=peakSigmas
   resolutionList=resList
@@ -385,10 +394,6 @@ def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np
   xFile=open("./FitResults/OutputFiles/Mass%d/Mass%dScan%sCompiledFitLocMaxEstimates.txt"%(m,m,s),'w+')
   xFile.write("#Compiled Fit Local Max Estimates:\n%s\n\n#Scanalyzer Final Estimates:\n%s\n#1Sigma:\n%s\n#Range:\n%s"%(str(cflm), str(ffl[:,0]), str(ffl[:,1]), str(ffl[:,2])))
   xFile.close()
-  if makePlots==True:
-    MultiBinSpreadPlotter(mass, scan, ccex, resList, currDir=currDir)
-    MultiBinSpreadPlotter(mass, scan, cdlm, resList, currDir=currDir, quantity="local maxima from data")
-    MultiBinSpreadPlotter(mass, scan, cflm, resList, currDir=currDir, quantity="local maxima from fits")
   return({'fce':fce,'fdl':fdl,'ffl':ffl})
 
 if __name__ == '__main__':
@@ -400,10 +405,10 @@ if __name__ == '__main__':
   colorDict={242:'red', 243:'orange',244:'green',245:'blue',247:'purple'}
   massScanDic={}
   massScanDic[242]=[[2312, 2313]] #These are good individually and combined!
-  massScanDic[243]=[[2302,2303,2308],2283]#2300? #2283(from a different time, when signals weren't as strong. use in future), 2301("wavemeter stopped working in the middle of a peak" + relatively weak signal)
+  massScanDic[243]=[[2302,2303,2308]]#,2283]#2300? #2283(from a different time, when signals weren't as strong. use in future), 2301("wavemeter stopped working in the middle of a peak" + relatively weak signal)
   massScanDic[244]=[[2304,2305,2306]]#,2307] #possibly remove 2307?
-  massScanDic[245]=[[2309,2310,2320],[2341,2349],2350]#, [2341(75mW),2349],2350("re-tuned TiSa overlap upstairs --> additional 50% improvement")]#,[2346] is a pdl scan though. gross...#2178 is Ti:Sa, but actually gross af#
-  massScanDic[247]=[[2311,2322],[2188,2190]]#(also decent, but from diff era with different rates)
+  massScanDic[245]=[[2309,2310,2320]]#,[2341,2349],2350]#, [2341(75mW),2349],2350("re-tuned TiSa overlap upstairs --> additional 50% improvement")]#,[2346] is a pdl scan though. gross...#2178 is Ti:Sa, but actually gross af#
+  massScanDic[247]=[[2311,2322]]#,[2188,2190]]#(also decent, but from diff era with different rates)
   initCenterEsts={}
   initCenterEsts[242]=[13285,13278.86,13272.76,13266.76]#,13260.35]
   initCenterEsts[243]=[13284.91,13278.79,13272.64,13266.56]#,13260.35]
@@ -411,7 +416,7 @@ if __name__ == '__main__':
   initCenterEsts[245]=[13284.73,13278.60,13272.46,13266.48]#,13260.35]
   initCenterEsts[247]=[13284.54,13278.41,13272.24,13266.05]#,13260.35]
   sigmaEst=.7; gammaEst=1.65; skew0=-3
-  resolutionList=[.01,.02,.03,.05,.07,.1,.2,.5] #Honestly maybe just revert to previous fits. These ones were worse on average for some reason... :/
+  resolutionList=[.01,.02,.03,.05,.07,.1,.2,.3] #Honestly maybe just revert to previous fits. These ones were worse on average for some reason... :/
 
   for m in massList:
     scanListsList = massScanDic[m]

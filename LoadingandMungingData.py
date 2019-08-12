@@ -270,7 +270,9 @@ def normalizer(outputDF, normalizedOn=False):
     outputDF['signal_value']=outputDF['signal_value']/sigTot
     outputDF['signal_uncertainty']=outputDF['signal_uncertainty']/sigTot
   elif normalizedOn=="MaxValue":
-    maxVal = np.max(outputDF.loc[:,'signal_value'])
+    minVal=np.min(outputDF.loc[:,'signal_value'])
+    outputDF.loc[:,'signal_value']=outputDF['signal_value']-minVal
+    maxVal = np.max(outputDF.loc[:,'signal_value']); 
     print("test: maxVal=", maxVal)
     outputDF.loc[:,'signal_value']=outputDF['signal_value']/maxVal
     outputDF.loc[:,'signal_uncertainty']=outputDF['signal_uncertainty']/maxVal
