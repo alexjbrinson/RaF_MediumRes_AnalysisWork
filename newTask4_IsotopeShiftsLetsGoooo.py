@@ -71,7 +71,7 @@ def shiftVsMassPlotter_OneMethodSlice(shiftsFrame, i, saveFig=True, closeFig=Tru
 '''4. "Make a table of "isotope shifts", comparing differences between different isotopes and using the same electronic transition"'''
 if __name__ == '__main__':
   pd.options.mode.chained_assignment = None  # default='warn'
-  rewrite=False; importDataFrames=False
+  rewrite=False; importDataFrames=True
   ltrim=13256.5; rtrim=13287
   sameSigma=True
   idx = pd.IndexSlice
@@ -150,7 +150,7 @@ if __name__ == '__main__':
   with pd.option_context('display.max_rows', 10, 'display.max_columns', 10):print("Isotope Shifts:\n",isoShiftsFrame)
   
   dcr2LYNCH = {242:1.1708, 243:1.2680, 244:1.4041, 245:1.4858, 247:1.5871} #dictionary with δ<r^2> measurements due to K.M.LYNCH (2018) for Radium isotopes (with masses shifted to acount for 19Fluorine)
-  theoryShiftPerfm = {243:-1.56667, 245:0, 247:-1.7596} #dictionary with scaling constants, i.e. if isotopeShift_i = A_i + B_i*δ<r^2>, these are the B_i (and we expect A_i to be p negligible here) - from email thread due to Timur and Berger
+  theoryShiftPerfm = {243:-0.78549, 245:0, 247:-0.78549}#{243:-1.56667, 245:0, 247:-1.7596} #dictionary with scaling constants, i.e. if isotopeShift_i = A_i + B_i*δ<r^2>, these are the B_i (and we expect A_i to be p negligible here) - from email thread due to Timur and Berger
   #isoShiftsFrame.loc[:,idx[:,'maybeTheory?']] = np.zeros_like(isoShiftsFrame.loc[:,idx[:,'SkewedMu']])
   #isoShiftsFrame.insert(columns='maybeTheory?',level='Methods')
   isoShiftsFrame2 = makeShiftFrame(isotopeDataFrame, refMass=245, errorsFrom='stderr', fileWrite=False, extraMeths='MaybeTheory?') #this is kind of a wack way to have to do this shit imo
