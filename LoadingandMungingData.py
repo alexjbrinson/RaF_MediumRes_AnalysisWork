@@ -194,7 +194,7 @@ def rawDatPrep(*args, **kwds):
   #remove "NaN" entries from events_per_bunch now? so that timeDiffs aren't computed including these non-counting event counts.
   if verbose: print("TEST5:\n", mfouter.loc[:,["timestamp",'timeDiffs','events_per_bunch',wavenumberToUse]])
   if verbose: print(mfouter.info())
-  mfouter = mfouter[pd.notna(mfouter['bunch_no'])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes?
+  mfouter = mfouter[pd.notna(mfouter['bunch_no'])]#2/Aug/2019. It looks like this is causing a MemoryError sometimes? #1/Feb/2020 probably not anymore, now that I upgraded to 64-bit Python smh...
 
   if verbose: print("TEST6:\n", mfouter.loc[:49,["timestamp",'timeDiffs',"events_per_bunch",wavenumberToUse]])
   '''tStamps = np.array(mfouter.loc[:,'timestamp']); tDiffs = tStamps[1:]-tStamps[:-1]; #10Aug2019-computing timediffs from tagger time stamps only, since that's what I care about for rates, right?
@@ -327,7 +327,7 @@ def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=Tr
   outputDF.reset_index(drop=True, inplace=True)
   return(outputDF)
 
-def plotData(output, title='',fig=-1):
+def plotData(output, title='',fig=-1, resolution=-1):
   if fig==-1: plt.figure("output Plot")
   else: plt.figure(fig)
   if title=='': plt.title("Output Plot. numBins = %d"%len(output.loc[:,'wavenumber_mean']))
@@ -353,17 +353,19 @@ def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=F
 
 if __name__ == '__main__':
   mass = 245
-  scanIndex = 2458
+  scanIndex = 2368
   wmNum = whichWavemeter(mass,scanIndex)
   wmNum = 'pdl' if wmNum=='pdl' else int(wmNum)
-  res=.25
+  res=.67
   print("mass 245, scan %s, Which wavemeter?\n This wavemeter:"%str(scanIndex),wmNum)
   mfba =  rawDatPrep(mass, scanIndex, wmNum, cleanWM=True, verbose=False)
   #print("test 9:\n", mfba.head)
   #print("test 10:\n", mfba.tail)
   output = makeUseable(mfba, resolution=res)
   #print("test11:\n", output)
-  plotData(output, mass, scanIndex, wmNum, resolution=res)
+  plotData(output,title=r'$Ra^{%d}F^{19}$,   $B^2\Delta_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str(scanIndex), res), fig=1)
+  output2=makeUseable(mergeDatRaw(mass,[2367,2368]),resolution=res)
+  plotData(output2,title=r'$Ra^{%d}F^{19}$,   $B^2\Delta_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str([2367, 2368]), res), fig=2)
   #doEverything(234, 2127,)
 
   '''m=242;scans=[2312, 2313]

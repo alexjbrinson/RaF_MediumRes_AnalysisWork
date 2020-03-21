@@ -398,7 +398,7 @@ def Scanalyzer(mass, s, peakList=[13285,13278.8,13272.8,13266.57], peakSigmas=np
 
 if __name__ == '__main__':
   pd.options.mode.chained_assignment = None  # default='warn' (Pandas keep harassing me and I'm doing nothing wrong!)
-  rewrite=True; ltrim=13256.5; rtrim=13287; sameSigma=True
+  rewrite=False; ltrim=13256.5; rtrim=13287; sameSigma=True
   massList=np.array([242,243,244,245, 247])
   allScansBigDic = {}
   for m in massList: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
@@ -418,7 +418,7 @@ if __name__ == '__main__':
   sigmaEst=.7; gammaEst=1.65; skew0=-3
   resolutionList=[.01,.02,.03,.05,.07,.1,.2,.3] #Honestly maybe just revert to previous fits. These ones were worse on average for some reason... :/
 
-  for m in massList:
+  for m in [245]:#massList:
     scanListsList = massScanDic[m]
     peakList = initCenterEsts[m]
     for s in scanListsList:

@@ -18,20 +18,22 @@ def vLinePlotter(vlineArray, transitionLabel, vlabelArray, reflections=False, nu
   for i in range(len(vlineArray)):
     if i==-1: pass
     else:
-      plt.axvline(vlineArray[i],0,1, color='k', linestyle='dashed', linewidth=1, alpha=.75)
+      plt.axvline(vlineArray[i],0.05,.95, color='k', linestyle='dashed', linewidth=1, alpha=.75)
       if numericLabels:
         plt.annotate(s=vlabelArray[i]+"\n"+str(vlineArray[i]), xy=(vlineArray[i],.7+(i%6)/50), fontsize=6, ha='center', xycoords=('data','figure fraction'))
       else:
         plt.annotate(s=vlabelArray[i], xy=(vlineArray[i],.7+(i%6)/50), fontsize=6, ha='center', xycoords=('data','figure fraction'))
       if reflections:
-        plt.axvline(vlineArray[i]-2*beta*gamma*vlineArray[i],0,1, color='r', linestyle='dashed', linewidth=.25, alpha=.75)
+        plt.axvline(vlineArray[i]-2*beta*gamma*vlineArray[i],0.05,.95, color='r', linestyle='dashed', linewidth=.25, alpha=.75)
         if numericLabels:
           plt.annotate(s=vlabelArray[i]+"\nAnticolinear\nReflection\n%.2f"%(vlineArray[i]-2*beta*gamma*vlineArray[i]), xy=(vlineArray[i]-2*beta*gamma*vlineArray[i],.13+(i%6)/50), fontsize=6, ha='center', xycoords=('data','figure fraction'))
         else:
           if i<3: plt.annotate(s=vlabelArray[i]+"\nReflection", xy=(vlineArray[i]-2*beta*gamma*vlineArray[i],.15+(i%6)/50), fontsize=6, ha='center', xycoords=('data','figure fraction'),color='red',alpha=.4)
-  if not (np.all(vlineArray[0:6]==-1)): plt.annotate(s=transitionLabel+', P', xy=(np.mean(np.ma.masked_where(vlineArray[0:6]==-1,vlineArray[0:6])), .9), fontsize=10, ha='center', xycoords=('data','figure fraction'))
-  if not (np.all(vlineArray[6:12]==-1)): plt.annotate(s=transitionLabel+', Q', xy=(np.mean(np.ma.masked_where(vlineArray[6:12]==-1,vlineArray[6:12])), .9), fontsize=10, ha='center', xycoords=('data','figure fraction'))
-  if not (np.all(vlineArray[12:18]==-1)): plt.annotate(s=transitionLabel+', R', xy=(np.mean(np.ma.masked_where(vlineArray[12:18]==-1,vlineArray[12:18])), .9), fontsize=10, ha='center', xycoords=('data','figure fraction'))
+  if not (np.all(vlineArray[0:6]==-1)): plt.annotate(s=r'$\Delta\mathit{v}=-1$', xy=(np.mean(np.ma.masked_where(vlineArray[0:6]==-1,vlineArray[0:6])), .05), fontsize=10, ha='center', xycoords=('data','figure fraction'))
+  if not (np.all(vlineArray[6:12]==-1)): 
+    plt.annotate(s=transitionLabel, xy=(np.mean(np.ma.masked_where(vlineArray[6:12]==-1,vlineArray[6:12])), .95), fontsize=16, ha='center', xycoords=('data','figure fraction'))
+    plt.annotate(s=r'$\Delta\mathit{v}=0$', xy=(np.mean(np.ma.masked_where(vlineArray[6:12]==-1,vlineArray[6:12])), .05), fontsize=10, ha='center', xycoords=('data','figure fraction'))
+  if not (np.all(vlineArray[12:18]==-1)): plt.annotate(s=r'$\Delta\mathit{v}=+1$', xy=(np.mean(np.ma.masked_where(vlineArray[12:18]==-1,vlineArray[12:18])), .05), fontsize=10, ha='center', xycoords=('data','figure fraction'))
 
 '''2. "Do the same of the different isotopes 223-228Ra"'''
 beta = 0.0005920684 #v_bunch/c
@@ -59,7 +61,7 @@ vlineArrayPI12 = [12833.3, 12835.6, 12838., 12840.6, 12843.2, 12846.,   #P-band,
                   13670.2, 13679.3, 13688.5,13697.8, 13707.2, 13716.8]  #R-band, \Delta v =+1
 vlineArrayDELTA32 = [-1,-1,-1,-1,-1,-1,
                      15096.2, 15105., 15114., 15123.3, 15132.8, 15142.5, 
-                     15508.9, 15520.9, 15533.2, -1, -1, -1]
+                     -1,-1,-1, -1, -1, -1]
 vlineArrayDELTA52 = [-1,-1,-1,-1,-1,-1,
                      16120.3, 16131.1, 16141.9, 16152.8, 16163.9, 16175.,
                      -1,-1,-1,-1,-1,-1,]
@@ -151,9 +153,9 @@ rewrite=True
   plt.close()
 """
 
-"""
+
 m=245
-m245ScanstoInclude = [2130, 2131,2132,2324,2325,2346,2360,2364,2365,2368,2375,2376,2135,2136,2137,2138,2139,2164,2165,2178,2309,2310,2317,2319,2320,2340,2341,2349,2350]
+m245ScanstoInclude = [2130, 2131,2132,2323,2324,2325,2346,2360,2364,2365,2368,2375,2376,2135,2136,2137,2138,2139,2164,2165,2178,2309,2310,2317,2319,2320,2340,2341,2349,2350]
 scanInds = np.sort(np.array(m245ScanstoInclude))
 print("Doing new task. m = ",m)
 if not os.path.exists('./FrequencyConvertedDatasets/Plots/Mass%dPlots/'%m):
@@ -214,21 +216,22 @@ for s in scanInds:
   plt.text(np.mean(xdat), counter+.0, str(s), fontsize=16, horizontalalignment='center', verticalalignment='center')
   counter+=1
 xRange=xMax-xMin; plt.xlim([xMin-.05*xRange, xMax+.05*xRange])
-red_patch = mpatches.Patch(color='red', label="COBRA Scans")
+red_patch = mpatches.Patch(color='red', label="Dye Laser Scans")
 green_patch = mpatches.Patch(color='green', label="Injected Ti:Sa (HighRes)?")
-blue_patch = mpatches.Patch(color='blue', label="Grating Ti:Sa (LowRes)")
+blue_patch = mpatches.Patch(color='blue', label="Grating Ti:Sa Scans")
 yellow_patch = mpatches.Patch(color='yellow', label="laser source unclear")
 patchList=[red_patch,green_patch,blue_patch,yellow_patch]; handleList=[];
 for i in range(len(needPatches)):
   if needPatches[i]:handleList.append(patchList[i])
-lgd = plt.legend(loc=1, handles=handleList, fontsize=16)
+
 vLinePlotter(vlineArrayPI12, r'$X^2\Sigma^{+}_{1/2} \rightarrow A^2\Pi_{1/2}$', vlabelArray, reflections=True, numericLabels=False)
 vLinePlotter(vlineArrayPI32, r'$\rightarrow ^2\Pi_{3/2}$', vlabelArray, reflections=False, numericLabels=False)
 vLinePlotter(vlineArrayDELTA32, r'$\rightarrow ^2\Delta_{3/2}$', vlabelArray, reflections=False, numericLabels=False)
 vLinePlotter(vlineArrayDELTA52, r'$\rightarrow ^2\Delta_{5/2}$', vlabelArray, reflections=False, numericLabels=False)
-plt.savefig('./OverviewFigures/%dScanOverviewFigure_LowResSubsetAnalyzedForNaturePaper.png'%m, bbox_extra_artists=(lgd,), bbox_inches='tight')
-plt.close()"""
-
+lgd = plt.legend(loc="upper right", handles=handleList, fontsize=16, bbox_to_anchor=(1,1.0+.07*len(handleList)))
+plt.savefig('./OverviewFigures/%dScanOverviewFigure_LowResSubsetAnalyzedForNaturePaper.png'%m, bbox_extra_artists=(lgd,))#, bbox_inches='tight')
+#plt.close()
+"""
 m=245
 scanInds = np.sort(np.array(list(allScansBigDic[m].keys())).astype(int))
 print("Doing same task but in full. m = ",m)
@@ -308,7 +311,7 @@ vLinePlotter(vlineArrayPI12, r'$X^2\Sigma^{+}_{1/2} \rightarrow A^2\Pi_{1/2}$', 
 vLinePlotter(vlineArrayPI32, r'$\rightarrow ^2\Pi_{3/2}$', vlabelArray, reflections=False, numericLabels=False)
 vLinePlotter(vlineArrayDELTA32, r'$\rightarrow ^2\Delta_{3/2}$', vlabelArray, reflections=False, numericLabels=False)
 vLinePlotter(vlineArrayDELTA52, r'$\rightarrow ^2\Delta_{5/2}$', vlabelArray, reflections=False, numericLabels=False)
-plt.savefig('./OverviewFigures/%dScanOverviewFigure_AllScansExceptHighRes.png'%m, bbox_extra_artists=(lgd,), bbox_inches='tight')
+plt.savefig('./OverviewFigures/%dScanOverviewFigure_AllScansExceptHighRes.png'%m, bbox_extra_artists=(lgd,), bbox_inches='tight')"""
 plt.show()
 """
 plt.xlabel('Scan number', fontsize=18)
