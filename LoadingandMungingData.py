@@ -278,12 +278,25 @@ def normalizer(outputDF, normalizedOn=False):
     outputDF.loc[:,'signal_uncertainty']=outputDF['signal_uncertainty']/maxVal
   return(outputDF)
 
+def randSubsets(df, frac=0.1, nSamps=100):
+  # generates nSamps random subsamples (with replacement between samples, but not within individual sample selection) from rows of dataframe df, each of size = ceil(size(df)*frac).
+  #subsetFrame = pd.DataFrame(index=range(nSamps),columns=["sampleDFrame"])
+  subsetArray=[]
+  #print("uhh:\n", subsetFrame,subsetFrame.iloc[0])
+  for i in range(nSamps):
+    #subsetFrame.iloc[i] = df.sample(frac=frac)
+    subsetArray.append(df.sample(frac=frac))
+  return(subsetArray)
+
 def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True, normalizedOn=False,ltrim=-1,rtrim=-1, verbose=False):
   #converts (usually huge) time-centric dataframes from rawDatPrep() into spectrum-friendly wavenumber-based dataframes
   kVals = np.array(df.loc[:,"wavenumber"]); kRange=max(kVals)-min(kVals)
-  if verbose: print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
-  if resolution<0: binQuant = nBins
-  else: binQuant = math.ceil(kRange/resolution)
+  if kRange>0:
+    if verbose: print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
+    if resolution<0: binQuant = nBins
+    else: binQuant = math.ceil(kRange/resolution)
+  else:
+    print("what tf tf... kmin = ",min(kVals),"  kMax = ",max(kVals)," kRange = ",kRange)
   if verbose: print("TESTSTSSTSTS: numBins=%d"%binQuant)
   df.loc[:,'waveProds'] = df.loc[:,'wavenumber']*df.loc[:,'timeDiffs']
   kBins = pd.cut(df.loc[:,"wavenumber"], bins=binQuant)#, retbins=True)
@@ -352,20 +365,25 @@ def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=F
   return(output)
 
 if __name__ == '__main__':
-  mass = 245
-  scanIndex = 2368
-  wmNum = whichWavemeter(mass,scanIndex)
-  wmNum = 'pdl' if wmNum=='pdl' else int(wmNum)
-  res=.67
-  print("mass 245, scan %s, Which wavemeter?\n This wavemeter:"%str(scanIndex),wmNum)
-  mfba =  rawDatPrep(mass, scanIndex, wmNum, cleanWM=True, verbose=False)
+  mass = 244
+  scanIndex = [2304,2305,2306]
+  #wmNum = whichWavemeter(mass,scanIndex)
+  #wmNum = 'pdl' if wmNum=='pdl' else int(wmNum)
+  res=.1
+  
+  mfba =  mergeDatRaw(mass, scanIndex)#, wmNum, cleanWM=True, verbose=False)
   #print("test 9:\n", mfba.head)
   #print("test 10:\n", mfba.tail)
   output = makeUseable(mfba, resolution=res)
   #print("test11:\n", output)
-  plotData(output,title=r'$Ra^{%d}F^{19}$,   $B^2\Delta_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str(scanIndex), res), fig=1)
-  output2=makeUseable(mergeDatRaw(mass,[2367,2368]),resolution=res)
-  plotData(output2,title=r'$Ra^{%d}F^{19}$,   $B^2\Delta_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str([2367, 2368]), res), fig=2)
+  plotData(output,title=r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str(scanIndex), res), fig=1)
+  #output2=makeUseable(mergeDatRaw(mass,[2367,2368]),resolution=res)
+  #plotData(output2,title=r'$Ra^{%d}F^{19}$,   $B^2\Delta_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str([2367, 2368]), res), fig=2)
+  
+  subSamps=randSubsets(mfba, 0.25, 20)
+  print("Test:\n", subSamps[0])
+  subOut = makeUseable(subSamps[0], resolution=res)
+  plotData(subOut,title=r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$\nrandom subsample'%(str(scanIndex), res), fig=2)
   #doEverything(234, 2127,)
 
   '''m=242;scans=[2312, 2313]

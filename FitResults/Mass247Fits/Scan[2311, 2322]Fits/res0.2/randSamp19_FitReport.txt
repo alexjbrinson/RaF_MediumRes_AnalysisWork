@@ -1,0 +1,67 @@
+Fit Report for: Mass = 247, Scan = [2311, 2322], Resolution = 0.200, randSamp#19
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 473
+    # data points      = 153
+    # variables        = 13
+    chi-square         = 0.09932354
+    reduced chi-square = 7.0945e-04
+    Akaike info crit   = -1096.99103
+    Bayesian info crit = -1057.59533
+[[Variables]]
+    l0_slope:       0.08208172 +/- 0.03965505 (48.31%) (init = 0)
+    l0_intercept:  -1028.37437 +/- 526.244532 (51.17%) (init = 59.91646)
+    sv0_amplitude:  344.110025 +/- 12.3942677 (3.60%) (init = 315.6974)
+    sv0_center:     13284.5256 +/- 0.02138533 (0.00%) (init = 13284.54)
+    sv0_sigma:      0.10025353 +/- 1.21039417 (1207.33%) (init = 0.7)
+    sv0_skew:      -0.63984765 +/- 8.24129826 (1288.01%) (init = -2)
+    sv0_gamma:      1.69796253 +/- 0.12738146 (7.50%) (init = 1.65)
+    sv0_height:     1369.32883 +/- 16556.0131 (1209.06%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       0.36104403 +/- 4.35900462 (1207.33%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  192.660870 +/- 7.90204696 (4.10%) (init = 236.1366)
+    sv1_center:     13278.3873 +/- 0.02582494 (0.00%) (init = 13278.41)
+    sv1_sigma:      0.10025353 +/- 1.21039417 (1207.33%) == 'sv0_sigma'
+    sv1_skew:      -0.63984765 +/- 8.24129825 (1288.01%) == 'sv0_skew'
+    sv1_gamma:      1.69796253 +/- 0.12738146 (7.50%) == 'sv0_gamma'
+    sv1_height:     766.662008 +/- 31.4448865 (4.10%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.36104403 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  83.0481060 +/- 6.12318437 (7.37%) (init = 94.90824)
+    sv2_center:     13272.2304 +/- 0.05476623 (0.00%) (init = 13272.24)
+    sv2_sigma:      0.10025353 +/- 1.21039417 (1207.33%) == 'sv0_sigma'
+    sv2_skew:      -0.63984765 +/- 8.24129825 (1288.01%) == 'sv0_skew'
+    sv2_gamma:      1.69796253 +/- 0.12738146 (7.50%) == 'sv0_gamma'
+    sv2_height:     330.476177 +/- 24.3661978 (7.37%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       0.36104403 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  23.1813575 +/- 5.25735984 (22.68%) (init = 39.25481)
+    sv3_center:     13266.0110 +/- 0.14735074 (0.00%) (init = 13266.05)
+    sv3_sigma:      0.10025353 +/- 1.21039417 (1207.33%) == 'sv0_sigma'
+    sv3_skew:      -0.63984765 +/- 8.24129825 (1288.01%) == 'sv0_skew'
+    sv3_gamma:      1.69796253 +/- 0.12738146 (7.50%) == 'sv0_gamma'
+    sv3_height:     92.2463711 +/- 20.9207924 (22.68%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.36104403 +/- 0.00000000 (0.00%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(l0_slope, l0_intercept)       = -1.000
+    C(sv0_sigma, sv0_skew)          = -1.000
+    C(sv0_sigma, sv0_gamma)         = -0.832
+    C(sv0_skew, sv0_gamma)          =  0.830
+    C(sv0_amplitude, sv0_gamma)     =  0.635
+    C(sv0_center, sv0_skew)         = -0.503
+    C(sv0_center, sv0_sigma)        =  0.500
+    C(sv0_skew, sv1_center)         = -0.484
+    C(sv0_sigma, sv1_center)        =  0.481
+    C(sv0_amplitude, sv0_sigma)     = -0.478
+    C(sv0_amplitude, sv0_skew)      =  0.478
+    C(sv0_center, sv1_center)       =  0.405
+    C(sv0_gamma, sv1_amplitude)     =  0.392
+    C(sv0_amplitude, sv1_amplitude) =  0.325
+    C(l0_intercept, sv3_amplitude)  = -0.286
+    C(l0_slope, sv3_amplitude)      =  0.286
+    C(l0_slope, sv0_amplitude)      = -0.276
+    C(l0_intercept, sv0_amplitude)  =  0.275
+    C(sv0_skew, sv1_amplitude)      =  0.274
+    C(sv0_sigma, sv1_amplitude)     = -0.274
+    C(sv0_skew, sv2_center)         = -0.263
+    C(sv0_sigma, sv2_center)        =  0.262
+    C(sv0_gamma, sv1_center)        = -0.255

@@ -1,0 +1,16 @@
+Isotope Shift Fit Report for: 1 -> 1 Transition:[[Model]]
+    Model(linear, prefix='l0_')
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 6
+    # data points      = 4
+    # variables        = 2
+    chi-square         = 113009.014
+    reduced chi-square = 56504.5069
+    Akaike info crit   = 44.9957140
+    Bayesian info crit = 43.7683027
+[[Variables]]
+    l0_slope:     -0.92448001 +/- 0.53653881 (58.04%) (init = 1)
+    l0_intercept:  0.06923560 +/- 0.14074264 (203.28%) (init = 0)
+[[Correlations]] (unreported correlations are < 0.250)
+    C(l0_slope, l0_intercept) =  0.734

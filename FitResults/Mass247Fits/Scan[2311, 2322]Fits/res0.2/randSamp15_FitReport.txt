@@ -1,0 +1,67 @@
+Fit Report for: Mass = 247, Scan = [2311, 2322], Resolution = 0.200, randSamp#15
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 463
+    # data points      = 153
+    # variables        = 13
+    chi-square         = 0.11872375
+    reduced chi-square = 8.4803e-04
+    Akaike info crit   = -1069.69326
+    Bayesian info crit = -1030.29757
+[[Variables]]
+    l0_slope:       0.02969005 +/- 0.04318774 (145.46%) (init = 0)
+    l0_intercept:  -333.054882 +/- 573.148885 (172.09%) (init = 60.26325)
+    sv0_amplitude:  358.120771 +/- 13.6429652 (3.81%) (init = 317.6794)
+    sv0_center:     13284.5262 +/- 0.02434411 (0.00%) (init = 13284.54)
+    sv0_sigma:      0.10150001 +/- 1.29462109 (1275.49%) (init = 0.7)
+    sv0_skew:      -0.60648206 +/- 8.34793959 (1376.45%) (init = -2)
+    sv0_gamma:      1.70639003 +/- 0.13884114 (8.14%) (init = 1.65)
+    sv0_height:     1407.58142 +/- 17978.7240 (1277.28%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       0.36553299 +/- 4.66233190 (1275.49%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  178.851403 +/- 8.26922245 (4.62%) (init = 219.955)
+    sv1_center:     13278.3850 +/- 0.03095100 (0.00%) (init = 13278.41)
+    sv1_sigma:      0.10150001 +/- 1.29462109 (1275.49%) == 'sv0_sigma'
+    sv1_skew:      -0.60648206 +/- 8.34793961 (1376.45%) == 'sv0_skew'
+    sv1_gamma:      1.70639003 +/- 0.13884114 (8.14%) == 'sv0_gamma'
+    sv1_height:     702.969313 +/- 32.5018955 (4.62%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.36553299 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  87.8163172 +/- 6.88999353 (7.85%) (init = 104.6474)
+    sv2_center:     13272.1832 +/- 0.05721305 (0.00%) (init = 13272.24)
+    sv2_sigma:      0.10150001 +/- 1.29462109 (1275.49%) == 'sv0_sigma'
+    sv2_skew:      -0.60648206 +/- 8.34793961 (1376.45%) == 'sv0_skew'
+    sv2_gamma:      1.70639003 +/- 0.13884114 (8.14%) == 'sv0_gamma'
+    sv2_height:     345.159026 +/- 27.0808835 (7.85%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       0.36553299 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  27.8341926 +/- 5.91655214 (21.26%) (init = 47.24975)
+    sv3_center:     13266.1106 +/- 0.14529897 (0.00%) (init = 13266.05)
+    sv3_sigma:      0.10150001 +/- 1.29462109 (1275.49%) == 'sv0_sigma'
+    sv3_skew:      -0.60648206 +/- 8.34793961 (1376.45%) == 'sv0_skew'
+    sv3_gamma:      1.70639003 +/- 0.13884114 (8.14%) == 'sv0_gamma'
+    sv3_height:     109.401340 +/- 23.2548055 (21.26%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.36553299 +/- 0.00000000 (0.00%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(l0_slope, l0_intercept)       = -1.000
+    C(sv0_sigma, sv0_skew)          = -1.000
+    C(sv0_sigma, sv0_gamma)         = -0.831
+    C(sv0_skew, sv0_gamma)          =  0.829
+    C(sv0_amplitude, sv0_gamma)     =  0.631
+    C(sv0_center, sv0_skew)         = -0.517
+    C(sv0_center, sv0_sigma)        =  0.514
+    C(sv0_skew, sv1_center)         = -0.481
+    C(sv0_sigma, sv1_center)        =  0.478
+    C(sv0_amplitude, sv0_sigma)     = -0.468
+    C(sv0_amplitude, sv0_skew)      =  0.468
+    C(sv0_center, sv1_center)       =  0.412
+    C(sv0_gamma, sv1_amplitude)     =  0.367
+    C(sv0_amplitude, sv1_amplitude) =  0.306
+    C(l0_intercept, sv3_amplitude)  = -0.294
+    C(l0_slope, sv3_amplitude)      =  0.294
+    C(sv0_skew, sv2_center)         = -0.281
+    C(sv0_sigma, sv2_center)        =  0.281
+    C(sv0_gamma, sv2_amplitude)     =  0.274
+    C(sv0_amplitude, sv2_amplitude) =  0.265
+    C(sv0_gamma, sv1_center)        = -0.261
+    C(l0_slope, sv0_amplitude)      = -0.253
+    C(l0_intercept, sv0_amplitude)  =  0.252

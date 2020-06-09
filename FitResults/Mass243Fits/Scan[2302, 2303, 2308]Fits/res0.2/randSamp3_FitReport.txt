@@ -1,0 +1,43 @@
+Fit Report for: Mass = 243, Scan = [2302, 2303, 2308], Resolution = 0.200, randSamp#3
+[[Model]]
+    ((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 143
+    # data points      = 153
+    # variables        = 8
+    chi-square         = 1.39060800
+    reduced chi-square = 0.00959040
+    Akaike info crit   = -703.206619
+    Bayesian info crit = -678.963116
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   105.225945 +/- 2.03772457 (1.94%) (init = 97.02781)
+    sv0_amplitude:  709.349018 +/- 55.0540163 (7.76%) (init = 734.3489)
+    sv0_center:     13284.9165 +/- 0.04843502 (0.00%) (init = 13284.85)
+    sv0_sigma:      0.10000122 +/- 31.7698693 (31769.48%) (init = 0.5)
+    sv0_skew:      -0.76466875 +/- 32.0344443 (4189.32%) (init = -2)
+    sv0_gamma:      2.06332648 +/- 0.37538318 (18.19%) (init = 2)
+    sv0_height:     2829.85874 +/- 898912.701 (31765.29%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       0.36013540 +/- 114.413148 (31769.48%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  400.463029 +/- 43.0074565 (10.74%) (init = 468.377)
+    sv1_center:     13278.7778 +/- 0.08283417 (0.00%) (init = 13278.7)
+    sv1_sigma:      0.10000122 +/- 31.7698694 (31769.48%) == 'sv0_sigma'
+    sv1_skew:      -0.76466875 +/- 32.0344444 (4189.32%) == 'sv0_skew'
+    sv1_gamma:      2.06332648 +/- 0.37538318 (18.19%) == 'sv0_gamma'
+    sv1_height:     1597.59691 +/- 171.572841 (10.74%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.36013540 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv0_sigma, sv0_skew)         =  1.000
+    C(sv0_sigma, sv0_gamma)        =  0.867
+    C(sv0_skew, sv0_gamma)         =  0.866
+    C(l0_intercept, sv0_gamma)     = -0.719
+    C(sv0_amplitude, sv0_gamma)    =  0.660
+    C(l0_intercept, sv0_amplitude) = -0.657
+    C(l0_intercept, sv0_sigma)     = -0.571
+    C(l0_intercept, sv0_skew)      = -0.571
+    C(sv0_amplitude, sv0_sigma)    =  0.541
+    C(sv0_amplitude, sv0_skew)     =  0.540
+    C(l0_intercept, sv1_amplitude) = -0.381
+    C(sv0_center, sv0_skew)        = -0.357
+    C(sv0_center, sv0_sigma)       = -0.353

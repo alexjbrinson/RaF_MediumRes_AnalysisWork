@@ -1,0 +1,33 @@
+Fit Report for: Mass = 244, Scan = [2304, 2305, 2306], Resolution = 0.030, randSamp#2
+[[Model]]
+    ((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 163
+    # data points      = 1008
+    # variables        = 8
+    chi-square         = 0.18017660
+    reduced chi-square = 1.8018e-04
+    Akaike info crit   = -8682.57755
+    Bayesian info crit = -8643.25176
+##  Warning: uncertainties could not be estimated:
+    sv0_center:     at boundary
+    sv0_skew:       at boundary
+    sv1_center:     at boundary
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   45.1211490 (init = 43.20966)
+    sv0_amplitude:  257.198063 (init = 298.3853)
+    sv0_center:     13284.8500 (init = 13284.6)
+    sv0_sigma:      1.10683342 (init = 0.25)
+    sv0_skew:      -3.99999964 (init = -2)
+    sv0_gamma:      1.64734902 (init = 2)
+    sv0_height:     92.7033690 == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       3.98605025 == '3.6013100*sv0_sigma'
+    sv1_amplitude:  140.663831 (init = 190.7249)
+    sv1_center:     13278.6643 (init = 13278.45)
+    sv1_sigma:      1.10683342 == 'sv0_sigma'
+    sv1_skew:      -3.99999964 == 'sv0_skew'
+    sv1_gamma:      1.64734902 == 'sv0_gamma'
+    sv1_height:     50.7002691 == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       3.98605025 == '3.6013100*sv1_sigma'

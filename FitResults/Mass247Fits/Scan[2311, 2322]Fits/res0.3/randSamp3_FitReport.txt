@@ -1,0 +1,67 @@
+Fit Report for: Mass = 247, Scan = [2311, 2322], Resolution = 0.300, randSamp#3
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 20411
+    # data points      = 101
+    # variables        = 13
+    chi-square         = 0.08039162
+    reduced chi-square = 9.1354e-04
+    Akaike info crit   = -694.732555
+    Bayesian info crit = -660.735989
+[[Variables]]
+    l0_slope:       0.07628423 +/- 0.03668576 (48.09%) (init = 0)
+    l0_intercept:  -952.111885 +/- 486.849609 (51.13%) (init = 59.94012)
+    sv0_amplitude:  352.749941 +/- 11.5194076 (3.27%) (init = 303.5437)
+    sv0_center:     13284.5155 +/- 0.02220730 (0.00%) (init = 13284.54)
+    sv0_sigma:      0.10000084 +/- 0.53384136 (533.84%) (init = 0.7)
+    sv0_skew:      -0.56416673 +/- 7.19987912 (1276.20%) (init = -2)
+    sv0_gamma:      1.74383300 +/- 0.12094584 (6.94%) (init = 1.65)
+    sv0_height:     1407.25694 +/- 7534.56413 (535.41%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       0.36013402 +/- 1.92252824 (533.84%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  192.105407 +/- 7.14622631 (3.72%) (init = 177.9183)
+    sv1_center:     13278.3560 +/- 0.02496254 (0.00%) (init = 13278.41)
+    sv1_sigma:      0.10000084 +/- 0.53384136 (533.84%) == 'sv0_sigma'
+    sv1_skew:      -0.56416673 +/- 7.19987913 (1276.20%) == 'sv0_skew'
+    sv1_gamma:      1.74383300 +/- 0.12094584 (6.94%) == 'sv0_gamma'
+    sv1_height:     766.383309 +/- 28.5090808 (3.72%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.36013402 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  85.1947355 +/- 5.76544676 (6.77%) (init = 91.8423)
+    sv2_center:     13272.1923 +/- 0.05404206 (0.00%) (init = 13272.24)
+    sv2_sigma:      0.10000084 +/- 0.53384136 (533.84%) == 'sv0_sigma'
+    sv2_skew:      -0.56416673 +/- 7.19987913 (1276.20%) == 'sv0_skew'
+    sv2_gamma:      1.74383300 +/- 0.12094584 (6.94%) == 'sv0_gamma'
+    sv2_height:     339.874990 +/- 23.0006133 (6.77%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       0.36013402 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  28.3550774 +/- 5.09343349 (17.96%) (init = 37.97442)
+    sv3_center:     13266.1006 +/- 0.12971455 (0.00%) (init = 13266.05)
+    sv3_sigma:      0.10000084 +/- 0.53384136 (533.84%) == 'sv0_sigma'
+    sv3_skew:      -0.56416673 +/- 7.19987913 (1276.20%) == 'sv0_skew'
+    sv3_gamma:      1.74383300 +/- 0.12094584 (6.94%) == 'sv0_gamma'
+    sv3_height:     113.119451 +/- 20.3196905 (17.96%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.36013402 +/- 0.00000000 (0.00%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(l0_slope, l0_intercept)       = -1.000
+    C(sv0_sigma, sv0_skew)          = -1.000
+    C(sv0_sigma, sv0_gamma)         = -0.830
+    C(sv0_skew, sv0_gamma)          =  0.828
+    C(sv0_amplitude, sv0_gamma)     =  0.631
+    C(sv0_center, sv0_skew)         = -0.536
+    C(sv0_center, sv0_sigma)        =  0.532
+    C(sv0_skew, sv1_center)         = -0.495
+    C(sv0_sigma, sv1_center)        =  0.493
+    C(sv0_amplitude, sv0_sigma)     = -0.479
+    C(sv0_amplitude, sv0_skew)      =  0.479
+    C(sv0_center, sv1_center)       =  0.417
+    C(sv0_gamma, sv1_amplitude)     =  0.393
+    C(sv0_amplitude, sv1_amplitude) =  0.326
+    C(l0_intercept, sv3_amplitude)  = -0.300
+    C(l0_slope, sv3_amplitude)      =  0.299
+    C(sv0_skew, sv2_center)         = -0.293
+    C(sv0_sigma, sv2_center)        =  0.292
+    C(sv0_gamma, sv1_center)        = -0.264
+    C(sv0_skew, sv1_amplitude)      =  0.261
+    C(sv0_sigma, sv1_amplitude)     = -0.261
+    C(l0_slope, sv0_amplitude)      = -0.253
+    C(l0_intercept, sv0_amplitude)  =  0.252
