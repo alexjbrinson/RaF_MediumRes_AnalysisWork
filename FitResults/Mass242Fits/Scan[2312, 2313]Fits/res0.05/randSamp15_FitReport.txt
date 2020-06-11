@@ -3,63 +3,73 @@ Fit Report for: Mass = 242, Scan = [2312, 2313], Resolution = 0.050, randSamp#15
     ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
 [[Fit Statistics]]
     # fitting method   = leastsq
-    # function evals   = 4697
+    # function evals   = 217
     # data points      = 611
     # variables        = 13
-    chi-square         = 2.41024542
-    reduced chi-square = 0.00403051
-    Akaike info crit   = -3356.11008
-    Bayesian info crit = -3298.71382
+    chi-square         = 1.84603618
+    reduced chi-square = 0.00308702
+    Akaike info crit   = -3519.05635
+    Bayesian info crit = -3461.66009
 [[Variables]]
-    l0_slope:      -0.07527276 +/- 0.18603001 (247.14%) (init = 0)
-    l0_intercept:   1304.61611 +/- 2468.42500 (189.21%) (init = 303.3101)
-    sv0_amplitude:  3132.91980 +/- 68.1587284 (2.18%) (init = 3415.209)
-    sv0_center:     13284.9786 +/- 0.01394830 (0.00%) (init = 13285.05)
-    sv0_sigma:      0.10000088 +/- 0.34067454 (340.67%) (init = 0.7)
-    sv0_skew:      -0.64122491 +/- 5.80715235 (905.63%) (init = -2)
-    sv0_gamma:      1.84321372 +/- 0.08127363 (4.41%) (init = 1.65)
-    sv0_height:     12498.4318 +/- 42699.1776 (341.64%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
-    sv0_fwhm:       0.36013418 +/- 1.22687462 (340.67%) == '3.6013100*sv0_sigma'
-    sv1_amplitude:  1653.18852 +/- 38.5514770 (2.33%) (init = 2263.937)
-    sv1_center:     13278.8366 +/- 0.01720822 (0.00%) (init = 13278.91)
-    sv1_sigma:      0.10000088 +/- 0.34067454 (340.67%) == 'sv0_sigma'
-    sv1_skew:      -0.64122491 +/- 5.80715235 (905.63%) == 'sv0_skew'
-    sv1_gamma:      1.84321372 +/- 0.08127363 (4.41%) == 'sv0_gamma'
-    sv1_height:     6595.21001 +/- 153.796790 (2.33%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
-    sv1_fwhm:       0.36013418 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
-    sv2_amplitude:  728.705186 +/- 31.4528914 (4.32%) (init = 1167.977)
-    sv2_center:     13272.7588 +/- 0.02887693 (0.00%) (init = 13272.81)
-    sv2_sigma:      0.10000088 +/- 0.34067454 (340.67%) == 'sv0_sigma'
-    sv2_skew:      -0.64122491 +/- 5.80715235 (905.63%) == 'sv0_skew'
-    sv2_gamma:      1.84321372 +/- 0.08127363 (4.41%) == 'sv0_gamma'
-    sv2_height:     2907.08753 +/- 125.477779 (4.32%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
-    sv2_fwhm:       0.36013418 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
-    sv3_amplitude:  241.827237 +/- 26.9676642 (11.15%) (init = 513.0474)
-    sv3_center:     13266.7821 +/- 0.07576931 (0.00%) (init = 13266.81)
-    sv3_sigma:      0.10000088 +/- 0.34067454 (340.67%) == 'sv0_sigma'
-    sv3_skew:      -0.64122491 +/- 5.80715235 (905.63%) == 'sv0_skew'
-    sv3_gamma:      1.84321372 +/- 0.08127363 (4.41%) == 'sv0_gamma'
-    sv3_height:     964.742609 +/- 107.584468 (11.15%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
-    sv3_fwhm:       0.36013418 +/- 0.00000000 (0.00%) == '3.6013100*sv3_sigma'
+    l0_slope:       0 (fixed)
+    l0_intercept:   298.966798 +/- 2.44604718 (0.82%) (init = 306.8836)
+    sv0_amplitude:  3281.39045 +/- 58.7996935 (1.79%) (init = 3337.058)
+    sv0_center:     13285.0044 +/- 0.01124370 (0.00%) (init = 13285)
+    sv0_sigma:      0.10000021 +/- 0.89776299 (897.76%) (init = 0.5)
+    sv0_skew:      -0.70586691 +/- 6.35527623 (900.35%) (init = -2)
+    sv0_gamma:      2.03019622 +/- 0.07797474 (3.84%) (init = 2)
+    sv0_height:     13090.8264 +/- 117645.255 (898.68%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       0.36013177 +/- 3.23312282 (897.76%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  1739.10367 +/- 33.5512583 (1.93%) (init = 2283.152)
+    sv1_center:     13278.8618 +/- 0.01498839 (0.00%) (init = 13278.86)
+    sv1_sigma:      0.10000021 +/- 0.89776299 (897.76%) == 'sv0_sigma'
+    sv1_skew:      -0.70586691 +/- 6.35527625 (900.35%) == 'sv0_skew'
+    sv1_gamma:      2.03019622 +/- 0.07797474 (3.84%) == 'sv0_gamma'
+    sv1_height:     6938.00526 +/- 133.849874 (1.93%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.36013177 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  803.879428 +/- 28.7806304 (3.58%) (init = 1137.306)
+    sv2_center:     13272.7575 +/- 0.02460294 (0.00%) (init = 13272.76)
+    sv2_sigma:      0.10000021 +/- 0.89776299 (897.76%) == 'sv0_sigma'
+    sv2_skew:      -0.70586691 +/- 6.35527625 (900.35%) == 'sv0_skew'
+    sv2_gamma:      2.03019622 +/- 0.07797474 (3.84%) == 'sv0_gamma'
+    sv2_height:     3207.00819 +/- 114.817862 (3.58%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       0.36013177 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  291.707774 +/- 24.2178449 (8.30%) (init = 514.0496)
+    sv3_center:     13266.7483 +/- 0.05843447 (0.00%) (init = 13266.76)
+    sv3_sigma:      0.10519949 +/- 0.94600826 (899.25%) (init = 0.5)
+    sv3_skew:      -0.70586691 +/- 6.35527625 (900.35%) == 'sv0_skew'
+    sv3_gamma:      2.03019622 +/- 0.07797474 (3.84%) == 'sv0_gamma'
+    sv3_height:     1106.22755 +/- 9950.96348 (899.54%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.37885596 +/- 3.40686901 (899.25%) == '3.6013100*sv3_sigma'
 [[Correlations]] (unreported correlations are < 0.250)
-    C(l0_slope, l0_intercept)       = -1.000
     C(sv0_sigma, sv0_skew)          = -1.000
-    C(sv0_sigma, sv0_gamma)         = -0.821
-    C(sv0_skew, sv0_gamma)          =  0.819
-    C(sv0_amplitude, sv0_gamma)     =  0.568
-    C(sv0_skew, sv1_center)         = -0.488
-    C(sv0_sigma, sv1_center)        =  0.486
-    C(sv0_center, sv0_skew)         = -0.485
-    C(sv0_center, sv0_sigma)        =  0.481
-    C(sv0_gamma, sv1_amplitude)     =  0.452
-    C(sv0_amplitude, sv0_skew)      =  0.441
-    C(sv0_amplitude, sv0_sigma)     = -0.441
-    C(sv0_center, sv1_center)       =  0.388
-    C(sv0_skew, sv1_amplitude)      =  0.360
-    C(sv0_sigma, sv1_amplitude)     = -0.360
-    C(l0_slope, sv0_amplitude)      = -0.337
-    C(l0_intercept, sv0_amplitude)  =  0.336
-    C(sv0_amplitude, sv1_amplitude) =  0.313
-    C(sv0_skew, sv2_center)         = -0.289
-    C(sv0_sigma, sv2_center)        =  0.288
-    C(sv0_gamma, sv1_center)        = -0.264
+    C(sv0_skew, sv3_sigma)          = -0.998
+    C(sv0_sigma, sv3_sigma)         =  0.998
+    C(sv0_sigma, sv0_gamma)         = -0.840
+    C(sv0_skew, sv0_gamma)          =  0.839
+    C(sv0_gamma, sv3_sigma)         = -0.838
+    C(sv0_amplitude, sv0_gamma)     =  0.625
+    C(l0_intercept, sv0_amplitude)  = -0.607
+    C(l0_intercept, sv0_gamma)      = -0.594
+    C(l0_intercept, sv1_amplitude)  = -0.532
+    C(sv0_amplitude, sv0_sigma)     = -0.515
+    C(sv0_amplitude, sv0_skew)      =  0.515
+    C(sv0_amplitude, sv3_sigma)     = -0.512
+    C(l0_intercept, sv3_amplitude)  = -0.489
+    C(sv0_skew, sv1_center)         = -0.436
+    C(sv1_center, sv3_sigma)        =  0.434
+    C(sv0_sigma, sv1_center)        =  0.434
+    C(sv0_center, sv0_skew)         = -0.431
+    C(sv0_center, sv3_sigma)        =  0.429
+    C(sv0_center, sv0_sigma)        =  0.428
+    C(l0_intercept, sv2_amplitude)  = -0.428
+    C(sv0_gamma, sv1_amplitude)     =  0.424
+    C(l0_intercept, sv0_skew)       = -0.391
+    C(l0_intercept, sv0_sigma)      =  0.391
+    C(l0_intercept, sv3_sigma)      =  0.383
+    C(sv0_center, sv1_center)       =  0.348
+    C(sv0_sigma, sv1_amplitude)     = -0.343
+    C(sv0_skew, sv1_amplitude)      =  0.343
+    C(sv1_amplitude, sv3_sigma)     = -0.340
+    C(sv0_amplitude, sv1_amplitude) =  0.253
+    C(sv0_gamma, sv1_center)        = -0.253

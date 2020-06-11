@@ -274,6 +274,10 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1, resList=[
       print("resolution %d of %d, subsample %d of %d" %(i, len(resList)-1, k, nSamps-1) )
       #print("Another Test: k = ",k)
       datFrame = lmd.makeUseable(subSamps[k], resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=False)
+      if type(datFrame)==int:
+        print("this is wack. subSamps[k]:",subSamps[k])
+        while datFrame==-1:
+          datFrame = lmd.makeUseable(lmd.randSubsets(scanFrame, frac, 1), resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=False)
       #print("TESTSTSSTST:\n", datFrame)
       (fitRes, warningStatus, numPeaksUsed) = fitNPeaks(datFrame, peaksList, peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, sameSigma=sameSigma, similarSigma=similarSigma,linearTerm=linearTerm)#add other opts?
       if warningStatus == -1:
@@ -530,7 +534,7 @@ def Scanalyzer(mass, s, peaksList=[13285,13278.8,13272.8,13266.57], peakSigmas=n
 if __name__ == '__main__':
   pd.options.mode.chained_assignment = None  # default='warn' (Pandas keep harassing me and I'm doing nothing wrong!)
   rewrite=True; ltrim=13256.5; rtrim=13287; sameSigma=True
-  massList=np.array([242,244])#np.array([242,243,244,245, 247])
+  massList=np.array([245])#np.array([242,243,244,245, 247])
   allScansBigDic = {}
   for m in massList: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
   colorDict={242:'red', 243:'orange',244:'green',245:'blue',247:'purple'}
@@ -547,7 +551,7 @@ if __name__ == '__main__':
   initCenterEsts[245]=[13284.73,13278.60,13272.46,13266.48]#,13260.35]
   initCenterEsts[247]=[13284.54,13278.41,13272.24,13266.05]#,13260.35]
   sigmaEst=.5; gammaEst=2; skew0=-3
-  resolutionList=[.03,.05,.07,.1,.2,.3] # [.01,.02,.03,.05,.07,.1,.2,.3]# struggling a bit with low count statistics for ^{224,225}RaF
+  resolutionList=[.01,.02,.03,.05,.07,.1,.2,.3]# [.03,.05,.07,.1,.2,.3] #  struggling a bit with low count statistics for ^{224,225}RaF
   for m in massList:
     scanListsList = massScanDic[m]
     peaksList = initCenterEsts[m]

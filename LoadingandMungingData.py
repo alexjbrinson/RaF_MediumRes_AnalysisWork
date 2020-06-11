@@ -296,7 +296,8 @@ def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=Tr
     if resolution<0: binQuant = nBins
     else: binQuant = math.ceil(kRange/resolution)
   else:
-    print("what tf tf... kmin = ",min(kVals),"  kMax = ",max(kVals)," kRange = ",kRange)
+    print("what tf tf... kmin = ",min(kVals),"  kMax = ",max(kVals)," kRange = ",kRange, "kVals:",kVals)
+    return(-1)
   if verbose: print("TESTSTSSTSTS: numBins=%d"%binQuant)
   df.loc[:,'waveProds'] = df.loc[:,'wavenumber']*df.loc[:,'timeDiffs']
   kBins = pd.cut(df.loc[:,"wavenumber"], bins=binQuant)#, retbins=True)
