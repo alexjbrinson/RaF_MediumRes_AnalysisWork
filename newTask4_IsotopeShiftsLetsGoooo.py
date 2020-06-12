@@ -160,7 +160,7 @@ def shiftVsChargeRadPlotter_OneMethodSlice(shiftsFrame, i, deltaRSqDic,sigmaRSqD
       fitReportFile = open('./FitResults/isoShiftsTransition%d_FitReport'%j,'w+')
       plt.errorbar(x=0, y=0, fmt="o", color=color, markersize=6)
       plt.errorbar(x=xDat, y=yDat, xerr=xErr, yerr=yErr, fmt="o",
-      label=r"$%d \rightarrow %d$"%(j,j)+'\n'+r'$\delta\nu=%.2f,%.2f\, \delta\langle r^2\rangle$'%(allFits[j,0,0],allFits[j,1,0]), color=color, markersize=8)
+      label=r"$%d \rightarrow %d$"%(j,j)+'\n'+r'$\delta\nu=%.2f,%.2f\, \delta\langle r^2\rangle$'%(allFits[j,1,0],allFits[j,0,0]), color=color, markersize=8)
     
     fitReportFile.write("Isotope Shift Fit Report for: %d -> %d Transition:"%(j,j));
     fitReportFile.write("Beta: " + str(output.beta) + "\nBeta Std Error: " + str(output.sd_beta) + "\nBeta Covariance" + str(output.cov_beta))

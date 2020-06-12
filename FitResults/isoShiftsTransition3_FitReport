@@ -1,16 +1,4 @@
-Isotope Shift Fit Report for: 3 -> 3 Transition:[[Model]]
-    Model(linear, prefix='l0_')
-[[Fit Statistics]]
-    # fitting method   = leastsq
-    # function evals   = 6
-    # data points      = 4
-    # variables        = 2
-    chi-square         = 691.616131
-    reduced chi-square = 345.808066
-    Akaike info crit   = 24.6109469
-    Bayesian info crit = 23.3835356
-[[Variables]]
-    l0_slope:     -1.88416013 +/- 0.98384551 (52.22%) (init = 1)
-    l0_intercept: -0.22259483 +/- 0.22441750 (100.82%) (init = 0)
-[[Correlations]] (unreported correlations are < 0.250)
-    C(l0_slope, l0_intercept) =  0.841
+Isotope Shift Fit Report for: 3 -> 3 Transition:Beta: [-2.05138563 -0.60703764]
+Beta Std Error: [0.53529375 0.12887082]
+Beta Covariance[[0.06485477 0.01039617]
+ [0.01039617 0.00375895]]
