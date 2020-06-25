@@ -1,0 +1,74 @@
+Fit Report for: Mass = 247, Scan = [2311, 2322], Resolution = 0.070, randSamp#1
+[[Model]]
+    (((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 141
+    # data points      = 293
+    # variables        = 16
+    chi-square         = 0.08609216
+    reduced chi-square = 3.1080e-04
+    Akaike info crit   = -2350.82530
+    Bayesian info crit = -2291.94254
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   61.6940650 +/- 0.59214545 (0.96%) (init = 61.29058)
+    sv0_amplitude:  350.603745 +/- 10.2681164 (2.93%) (init = 406.2133)
+    sv0_center:     13284.5370 +/- 0.01524688 (0.00%) (init = 13284.48)
+    sv0_sigma:      0.61021683 +/- 0.24186470 (39.64%) (init = 0.5)
+    sv0_skew:      -3.99862655 +/- 1.79282326 (44.84%) (init = -2.5)
+    sv0_gamma:      1.67659842 +/- 0.13151541 (7.84%) (init = 2)
+    sv0_height:     229.214696 +/- 94.8080662 (41.36%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       2.19757996 +/- 0.87102977 (39.64%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  169.561379 +/- 7.59733035 (4.48%) (init = 221.3719)
+    sv1_center:     13278.3647 +/- 0.02555043 (0.00%) (init = 13278.36)
+    sv1_sigma:      0.16279950 +/- 0.94315622 (579.34%) (init = 0.5)
+    sv1_skew:      -1.02708447 +/- 6.03669510 (587.75%) (init = -2.5)
+    sv1_gamma:      1.53120388 +/- 0.16782663 (10.96%) (init = 2)
+    sv1_height:     415.512369 +/- 2417.25357 (581.75%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.58629147 +/- 3.39659791 (579.34%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  73.9852647 +/- 7.22310350 (9.76%) (init = 106.1443)
+    sv2_center:     13272.1527 +/- 0.05921196 (0.00%) (init = 13272.19)
+    sv2_sigma:      0.72826242 +/- 0.49726839 (68.28%) (init = 0.5)
+    sv2_skew:      -3.10217313 +/- 2.73997834 (88.32%) (init = -1)
+    sv2_gamma:      1.18120533 +/- 0.38173363 (32.32%) (init = 2)
+    sv2_height:     40.5291429 +/- 30.2365035 (74.60%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       2.62269873 +/- 1.79081765 (68.28%) == '3.6013100*sv2_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv1_sigma, sv1_skew)          = -1.000
+    C(sv0_sigma, sv0_skew)          = -0.971
+    C(sv2_sigma, sv2_skew)          = -0.938
+    C(sv2_sigma, sv2_gamma)         = -0.884
+    C(sv0_sigma, sv0_gamma)         = -0.865
+    C(sv1_sigma, sv1_gamma)         = -0.850
+    C(sv1_skew, sv1_gamma)          =  0.845
+    C(sv0_skew, sv0_gamma)          =  0.815
+    C(sv2_amplitude, sv2_gamma)     =  0.792
+    C(sv2_skew, sv2_gamma)          =  0.782
+    C(sv1_amplitude, sv1_gamma)     =  0.723
+    C(sv0_amplitude, sv0_gamma)     =  0.712
+    C(l0_intercept, sv0_amplitude)  = -0.683
+    C(sv2_amplitude, sv2_sigma)     = -0.606
+    C(sv1_center, sv1_skew)         = -0.605
+    C(sv1_center, sv1_sigma)        =  0.596
+    C(sv2_center, sv2_skew)         = -0.587
+    C(sv2_amplitude, sv2_skew)      =  0.575
+    C(sv0_amplitude, sv0_sigma)     = -0.565
+    C(sv0_amplitude, sv0_skew)      =  0.559
+    C(sv2_center, sv2_sigma)        =  0.543
+    C(l0_intercept, sv2_amplitude)  = -0.539
+    C(sv0_center, sv0_skew)         = -0.538
+    C(sv1_amplitude, sv1_sigma)     = -0.537
+    C(sv1_amplitude, sv1_skew)      =  0.536
+    C(l0_intercept, sv1_amplitude)  = -0.475
+    C(l0_intercept, sv0_gamma)      = -0.471
+    C(sv0_center, sv0_sigma)        =  0.459
+    C(l0_intercept, sv2_gamma)      = -0.403
+    C(l0_intercept, sv1_gamma)      = -0.379
+    C(sv0_amplitude, sv2_amplitude) =  0.328
+    C(l0_intercept, sv0_skew)       = -0.305
+    C(l0_intercept, sv0_sigma)      =  0.293
+    C(sv1_center, sv1_gamma)        = -0.279
+    C(sv2_center, sv2_gamma)        = -0.268
+    C(l0_intercept, sv2_sigma)      =  0.257
+    C(sv0_amplitude, sv2_gamma)     =  0.250

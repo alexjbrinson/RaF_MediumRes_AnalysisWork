@@ -1,0 +1,68 @@
+Fit Report for: Mass = 245, Scan = [2309, 2310, 2320], Resolution = 0.300, randSamp#9
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 1720
+    # data points      = 102
+    # variables        = 13
+    chi-square         = 1.86236767
+    reduced chi-square = 0.02092548
+    Akaike info crit   = -382.318668
+    Bayesian info crit = -348.194021
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   327.341227 +/- 2.75108436 (0.84%) (init = 332.1527)
+    sv0_amplitude:  3192.90057 +/- 60.2006294 (1.89%) (init = 2830.409)
+    sv0_center:     13284.7208 +/- 0.01335308 (0.00%) (init = 13284.73)
+    sv0_sigma:      0.18794285 +/- 0.45986737 (244.68%) (init = 0.5)
+    sv0_skew:      -1.14800042 +/- 2.84120164 (247.49%) (init = -2)
+    sv0_gamma:      1.81372773 +/- 0.07540911 (4.16%) (init = 2)
+    sv0_height:     6777.50216 +/- 16652.1382 (245.70%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       0.67684048 +/- 1.65612496 (244.68%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  1584.12216 +/- 37.4265655 (2.36%) (init = 1664.504)
+    sv1_center:     13278.5852 +/- 0.01879395 (0.00%) (init = 13278.6)
+    sv1_sigma:      0.18794285 +/- 0.45986737 (244.68%) == 'sv0_sigma'
+    sv1_skew:      -1.14800042 +/- 2.84120164 (247.49%) == 'sv0_skew'
+    sv1_gamma:      1.81372773 +/- 0.07540911 (4.16%) == 'sv0_gamma'
+    sv1_height:     3362.58244 +/- 79.4445748 (2.36%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.67684048 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  729.251276 +/- 31.1933927 (4.28%) (init = 797.8315)
+    sv2_center:     13272.4250 +/- 0.03346488 (0.00%) (init = 13272.46)
+    sv2_sigma:      0.18794285 +/- 0.45986737 (244.68%) == 'sv0_sigma'
+    sv2_skew:      -1.14800042 +/- 2.84120164 (247.49%) == 'sv0_skew'
+    sv2_gamma:      1.81372773 +/- 0.07540911 (4.16%) == 'sv0_gamma'
+    sv2_height:     1547.96618 +/- 66.2135515 (4.28%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       0.67684048 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  207.408741 +/- 30.6936958 (14.80%) (init = 290.0121)
+    sv3_center:     13266.4285 +/- 0.28767214 (0.00%) (init = 13266.48)
+    sv3_sigma:      0.10000000 +/- 1.10056689 (1100.57%) (init = 0.5)
+    sv3_skew:      -1.14800042 +/- 2.84120164 (247.49%) == 'sv0_skew'
+    sv3_gamma:      1.81372773 +/- 0.07540911 (4.16%) == 'sv0_gamma'
+    sv3_height:     827.441203 +/- 9030.85638 (1091.42%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.36013100 +/- 3.96348255 (1100.57%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv0_sigma, sv0_skew)         = -1.000
+    C(sv3_center, sv3_sigma)       =  0.963
+    C(sv0_sigma, sv0_gamma)        = -0.821
+    C(sv0_skew, sv0_gamma)         =  0.818
+    C(sv3_amplitude, sv3_sigma)    =  0.622
+    C(l0_intercept, sv0_gamma)     = -0.621
+    C(l0_intercept, sv0_amplitude) = -0.616
+    C(sv3_amplitude, sv3_center)   =  0.610
+    C(sv0_amplitude, sv0_gamma)    =  0.596
+    C(sv0_amplitude, sv0_sigma)    = -0.534
+    C(sv0_amplitude, sv0_skew)     =  0.534
+    C(sv0_center, sv0_skew)        = -0.500
+    C(sv0_center, sv0_sigma)       =  0.492
+    C(l0_intercept, sv1_amplitude) = -0.483
+    C(sv0_skew, sv1_center)        = -0.468
+    C(sv0_sigma, sv1_center)       =  0.461
+    C(l0_intercept, sv2_amplitude) = -0.450
+    C(l0_intercept, sv0_skew)      = -0.405
+    C(l0_intercept, sv0_sigma)     =  0.405
+    C(sv0_center, sv1_center)      =  0.386
+    C(l0_intercept, sv3_amplitude) = -0.353
+    C(sv0_gamma, sv1_amplitude)    =  0.292
+    C(sv0_sigma, sv3_sigma)        = -0.257
+    C(sv0_skew, sv3_sigma)         =  0.256

@@ -115,9 +115,9 @@ def fitPlottingSubsampleRoutine(datFrame, mass, s, r, k, n, fitRes, redchi=-1, c
   plt.gcf().savefig(currDir+"Mass%d_Scan%s_%dbins_%dpeaksFit_Subsamp%d.png"%(mass,scan,len(datFrame.index),n,k))
   plt.close()
 
-def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', useWeights=True, sameSkew=True, skewList=np.array([]), skew0="NaN", initGamma=1,sameSigma=True, similarSigma=True, linearTerm=False, BolzmannHeights=False, T=-1,Ei=-1, attempt=1, verbose=False):
+def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', useWeights=True, sameSkew=True, skewList=np.array([]), skew0="NaN", initGamma=1,sameSigma=True, sameGamma=True, linearTerm=False, BolzmannHeights=False, T=-1,Ei=-1, attempt=1, verbose=False):
 #fit scan data with rebinning to spectrum with pre-guessed peaks
-  # TODO incorporate similarSigma idea!
+  # TODO incorporate sameGamma idea!
   N = len(peaksList)
   if type(peakSigmas)==float:
     peakSigmas = peakSigmas*np.ones_like(peaksList)
@@ -129,9 +129,12 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
     print("Just a heads up, you input a list of distinct sigma values, but sameSigma==True, so the first sigma value will be used for each peak. Set sameSigma to False if you dislike this.")
     peakSigmas=peakSigmas[0]*np.ones_like(peakSigmas)
 
-  if type(skew0) == 'float':
-    skewList = skew0*np.ones_like(peaksList)
+  if type(skew0) == float or type(skew0) == int:
+    if sameSkew or not( len(skewList) == N):
+      print("we're actually in this condition.. len(skewList) = %d, skewList:"%len(skewList), skewList,"\nnp.all(type(np.array(skewList).astype('float')) == float ) = ",np.all(type(np.array(skewList).astype('float')) == float) )
+      skewList = skew0*np.ones_like(peaksList)
   else:
+    print("else... skew0 = ", skew0, type(skew0))
     if len(skewList) == 0:
       skewList = -2*np.ones_like(peaksList)
     else:
@@ -175,7 +178,7 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
       amp=propFactor*amp0
     else:
       locMaxOutput = findLocalMax(datFrame, peaksList[i]-.5, 1, uncertIndex=4)
-      estimHeight = (locMaxOutput[1,0]-locMaxOutput[1,1]/2) - bg - math.sqrt(bg)/2 #I'm subtracting off half of the "uncertainty" from my height estimate, so random spikes won't ruin my initial guess on noisier scans
+      estimHeight = (locMaxOutput[1,0]-4*locMaxOutput[1,1]/5) - bg - math.sqrt(bg)/2 #I'm subtracting off half of the "uncertainty" from my height estimate, so random spikes won't ruin my initial guess on noisier scans
       if verbose: print("Adding peak %d to model. new estimHeight = %.2f"%(i,estimHeight))
       amp=estimHeight*(peakSigmas[i]*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real
     
@@ -183,18 +186,19 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
     #print("testing math stuff... amp=%.2f; height=%.2f"%(amp,height1))
     svmod = SkewedVoigtModel(prefix="sv"+str(i)+"_")
     svmod.set_param_hint('center', value=peaksList[i], min=max(peaksList[i]-peakSigmas[i], xDat[3]), max=min(peaksList[i]+peakSigmas[i],xDat[-3]))
-    svmod.set_param_hint('sigma', value=peakSigmas[i], min=0.1, max=3)
+    svmod.set_param_hint('sigma', value=peakSigmas[i], min=0.1, max=1)
     #svmod.set_param_hint('amplitude', value=estimHeight*((initGamma+peakSigmas[i])/(1*.45)), min=3*np.mean(ySigDat))
     #svmod.set_param_hint('amplitude', value=amp, min=3*np.mean(ySigDat))
     svmod.set_param_hint('amplitude', value=amp*.5, min=3*np.mean(ySigDat)*(np.min(peakSigmas)*math.sqrt(2*math.pi))/special.wofz((1j*initGamma)/(peakSigmas[i]*math.sqrt(2))).real, max = 1.5*amp)#?
-    svmod.set_param_hint('skew', value = skewList[i], min=-4,max=0)
+    svmod.set_param_hint('skew', value = skewList[i], min=-4,max=-1)
     peakModelsArray.append(svmod)
     params += svmod.make_params()#svmod.guess(yDat, x=xDat)#
     if i == 0: params['sv'+str(i)+'_gamma']= Parameter('sv'+str(i)+'_gamma', value=initGamma, min=0, max = 3, vary=True)
     elif i>0:
-      params['sv'+str(i)+'_gamma'] = Parameter('sv'+str(i)+'_gamma', expr='sv0_gamma')
+      if sameGamma: params['sv'+str(i)+'_gamma'] = Parameter('sv'+str(i)+'_gamma', expr='sv0_gamma')
+      else: params['sv'+str(i)+'_gamma'] = Parameter('sv'+str(i)+'_gamma', value=initGamma, min=0, max = 3, vary=True)
       if sameSkew: params['sv'+str(i)+'_skew'] = Parameter('sv'+str(i)+'_skew', expr='sv0_skew')
-      if i<3 and sameSigma: params['sv'+str(i)+'_sigma'] = Parameter('sv'+str(i)+'_sigma', expr='sv0_sigma')
+      if i<2 and sameSigma: params['sv'+str(i)+'_sigma'] = Parameter('sv'+str(i)+'_sigma', expr='sv0_sigma')
 
   mod = np.sum(peakModelsArray)+lmod
   if attempt==1: print("parameters initialized. Starting fit now.")
@@ -212,12 +216,12 @@ def fitNPeaks(datFrame, peaksList, peakSigmas=np.array([]), method='leastsq', us
       print("bad last try :( .test:", fitResult.best_values['sv'+str(N-1)+'_amplitude'], minAmp, "; reducePeaksCondit = ", reducePeaksCondit)
       if len(peaksList)>2 and reducePeaksCondit:  #If estimated amp of left-most peak is minimum allowed value, try again without fitting to that peak.
         print("3rd attempt to fit with errorbars has failed due to poor SNR for left-most peak. Will start over fitting to only %d peaks."%len(peaksList[:-1]))
-        return(fitNPeaks(datFrame, peaksList[:-1]+0.1*np.ones_like(peaksList[:-1]), peakSigmas=peakSigmas[:-1], initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, sameSigma=sameSigma, similarSigma=similarSigma, linearTerm=linearTerm, method=method))
+        return(fitNPeaks(datFrame, peaksList[:-1]+0.1*np.ones_like(peaksList[:-1]), peakSigmas=peakSigmas[:-1], initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew,skew0=skew0,skewList=skewList[:-1], sameSigma=sameSigma, sameGamma=sameGamma, linearTerm=linearTerm, method=method))
       
       else: print("this was the 3rd attempt and we still couldn't give errorbars. I give up :/"); return(fitResult, warningStatus, len(peaksList))
     else:
       print("Fook... Attempt %d unsuccessful. Will attempt again with something changed?"%attempt)
-      return(fitNPeaks(datFrame, peaksList-0.05*attempt*np.ones_like(peaksList), peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, sameSigma=sameSigma, similarSigma=similarSigma, linearTerm=linearTerm, method=method,attempt=attempt+1))
+      return(fitNPeaks(datFrame, peaksList-0.05*attempt*np.ones_like(peaksList), peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew,skew0=skew0,skewList=skewList, sameSigma=sameSigma, sameGamma=sameGamma, linearTerm=linearTerm, method=method,attempt=attempt+1))
 
 def findLocalMax(datFrame, guess, searchWidth, xcol="wavenumber_mean",ycol="signal_value", uncertIndex=3, verbose=False):
   cropDat=lmd.trimRange(datFrame.copy(),ltrim=guess-searchWidth,rtrim=guess+searchWidth).loc[:,[xcol,ycol]].sort_values(by=ycol,ascending=False)
@@ -228,7 +232,7 @@ def findLocalMax(datFrame, guess, searchWidth, xcol="wavenumber_mean",ycol="sign
   #print("findLocalMaxTests. cropDat:\n",cropDat.head(),"\n, xValsByY:%s\nyValsByY:%s"%(xValsByY,yValsByY))
   return(np.array([[xValsByY[0],abs(xValsByY[0]-xValsByY[uncertIndex])],[yValsByY[0],abs(yValsByY[0]-yValsByY[uncertIndex])]]))
 
-def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1, resList=[.01,.02,.05,.1,.2,.5], method='leastsq',similarSigma=True, makePlots=True,spreadPlot=True, 
+def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1, resList=[.01,.02,.05,.1,.2,.5], method='leastsq',sameGamma=False, makePlots=True,spreadPlot=True, 
   sameSkew=True, sameSigma=True, useWeights=True, ltrim=-1, rtrim=-1, skewList=np.array([]), skew0='NaN',linearTerm=False,frac=1, nSamps=1):
   #fit scan x data with rebinning R to spectrum with N peaks
   scan = str(s)
@@ -269,17 +273,17 @@ def fitScanX(mass, s, peaksList, peakSigmas=np.array([]), initGamma=1, resList=[
     resolutionPath = currDir+'res%s/'%str(r)
     if not os.path.exists(resolutionPath): os.makedirs(resolutionPath)
     print("resolution=", r)
-    subSamps = lmd.randSubsets(scanFrame, frac, nSamps)
+    subSamps = lmd.randSubsets(scanFrame, frac=frac, nSamps=nSamps)
     for k in range(nSamps):
       print("resolution %d of %d, subsample %d of %d" %(i, len(resList)-1, k, nSamps-1) )
       #print("Another Test: k = ",k)
       datFrame = lmd.makeUseable(subSamps[k], resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=False)
       if type(datFrame)==int:
-        print("this is wack. subSamps[k]:",subSamps[k])
+        print("this is wack. subSamps[k]:\n",subSamps[k])
         while datFrame==-1:
-          datFrame = lmd.makeUseable(lmd.randSubsets(scanFrame, frac, 1), resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=False)
+          datFrame = lmd.makeUseable(lmd.randSubsets(scanFrame, frac, 1)[0], resolution=r, cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=False)
       #print("TESTSTSSTST:\n", datFrame)
-      (fitRes, warningStatus, numPeaksUsed) = fitNPeaks(datFrame, peaksList, peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, sameSigma=sameSigma, similarSigma=similarSigma,linearTerm=linearTerm)#add other opts?
+      (fitRes, warningStatus, numPeaksUsed) = fitNPeaks(datFrame, peaksList, peakSigmas=peakSigmas, initGamma=initGamma, useWeights=useWeights, sameSkew=sameSkew, skewList=skewList,skew0=skew0, sameSigma=sameSigma, sameGamma=sameGamma,linearTerm=linearTerm)#add other opts?
       if warningStatus == -1:
         print("That's it for this scan, boys. Don't. push. these peaks. They're. close. to. the. eeeedge. (One of the peaks is leaking out of the scan window at rebin setting%d)"%r)
         (ccrx,ccex,cdlm,cflm)=(compiledGoFs[:i], compiledCenterEsts[:i], compiledDataLocalMax[:i],compiledFitLocalMax[:i])
@@ -414,32 +418,19 @@ def weightedStatistics(dataVals, dataSigs, transitionLabel="'this'", verbose=Fal
   if len(dataVals)==1:
     print("yo... There was only one data point. What are you averaging, dawg?")
     return((dataVals[0], dataSigs[0]))
-  dataVals = np.ma.array(dataVals, mask=np.isnan(dataVals)); dataSigs = np.ma.array(dataSigs, mask=np.isnan(dataVals)) #masking arrays to remove NaNs in case of fits to reduced number of peaks
+  dataVals = np.ma.array(dataVals, mask=np.isnan(dataVals)); dataSigs = np.ma.array(dataSigs, mask=np.isnan(dataVals)) #masking arrays to remove NaNs in cases of fits to a reduced number of peaks
   #dataVals = np.ma.array(dataVals, mask=np.isnan(dataSigs)); dataSigs = np.ma.array(dataSigs, mask=np.isnan(dataSigs)) #Also masking arrays on NaN vals in data Sigs, just in case?
   dataVarians = np.square(dataSigs)
-  weightedMean = (1/np.sum(1/dataVarians))*np.sum(dataVals/dataVarians)
-  statistVar = 1/np.sum(1/dataVarians)
-  naiveScatterVar = np.var(dataVals)/len(dataVals)
-  '''
-  scatterVar = (1/(len(dataVals)-1))*np.sum( np.square(dataVals - weightedMean)/dataVarians )*statistVar
-  print("statistVar = ",statistVar)
-  print("scatterVar = ",scatterVar)
-  if statistVar>scatterVar:
-    if verbose: print("Statistical variance larger than scattering variance for "+transitionLabel+" transition. Will use statistVar to report final uncertainty.")
-    weightedError=math.sqrt(statistVar)
-  elif statistVar<scatterVar:
-    if verbose: print("Scatter variance larger than statistical variance for "+transitionLabel+" transition. Will use scatterVar to report final uncertainty.")
-    weightedError=math.sqrt(scatterVar)
-  else:
-    if verbose: print("wtf, what are the odds!? statistVar==scatterVar = ", statistVar==scatterVar)
-    weightedError=math.sqrt(statistVar)
-  return((weightedMean, weightedError))
-  '''
-  normalization=statistVar
-  #totVar = (normalization**2)*np.sum( (np.square(weightedMean-dataVals) + dataVarians) / np.square(dataVarians) )
-  #if verbose: print("statistVar = ", statistVar, "\nnaiveScatterVar = ", naiveScatterVar, "\npotentially totVar = ", totVar)
-  totVar = (normalization)*np.sum( (np.square(weightedMean-dataVals)/(len(dataVals)-1) + dataVarians) / dataVarians )
-  weightScatVar = (normalization)*np.sum( np.square(weightedMean-dataVals)  / dataVarians )/len(dataVals)
+  weightedMean = (1/np.sum(1/dataVarians)) * np.sum(dataVals/dataVarians)
+  statistVar = 1/np.sum(1/dataVarians); normalization=statistVar
+  naiveScatterVar = np.var(dataVals)/len(dataVals) #i.e. σ_μ = σ_{sample}/√n
+  
+  weightScatVar = (normalization)*np.sum( np.square(weightedMean-dataVals)  / dataVarians )/(len(dataVals)-1)
+  #totVar = (normalization)*np.sum( (np.square(weightedMean-dataVals)/(len(dataVals)-1) + dataVarians) / dataVarians ) 
+  #       = (normalization)*np.sum( (np.square(weightedMean-dataVals)/(len(dataVals)-1)/dataVarians + 1) )
+  #       = weightScatVar + (normalization)*N =  weightScatVar + N*statistVar #hmmmm...
+  totVar = (normalization)*(np.sum( np.square(weightedMean-dataVals)/((len(dataVals)-1)*dataVarians) ) + 1)  
+  
   if verbose:
     print("\nnaiveScatterVar = ", naiveScatterVar, "  statistVar = ", statistVar, "\nweightScatVar = ", weightScatVar, "  potentially totVar = ", totVar)
     print("weightedMean = ", weightedMean, "  std = ", math.sqrt(totVar))
@@ -477,7 +468,7 @@ def scanFitsFinalEsts(compRay):
     #print("reshaped dims:\n",resh.shape)
     return(scanFitsFinalEsts(resh))
 
-def Scanalyzer(mass, s, peaksList=[13285,13278.8,13272.8,13266.57], peakSigmas=np.array([]), initGamma=1,resList=[.01,.02,.05,.1,.2,.5], method='leastsq',similarSigma=True, makePlots=True, sameSkew=True, sameSigma=True, useWeights=True, ltrim=-1, rtrim=-1, skewList=np.array([]), skew0='NaN', linearTerm=False, rewrite=False, verbose=False,frac=1, nSamps=1):
+def Scanalyzer(mass, s, peaksList=[13285,13278.8,13272.8,13266.57], peakSigmas=np.array([]), initGamma=1,resList=[.01,.02,.05,.1,.2,.5], method='leastsq',sameGamma=True, makePlots=True, sameSkew=True, sameSigma=True, useWeights=True, ltrim=-1, rtrim=-1, skewList=np.array([]), skew0='NaN', linearTerm=False, rewrite=False, verbose=False,frac=1, nSamps=1):
   m = mass
   scan = str(s)
   print("Now running Scanalyzer for mass = %d; scan: %s"%(mass, scan))
@@ -512,9 +503,9 @@ def Scanalyzer(mass, s, peaksList=[13285,13278.8,13272.8,13266.57], peakSigmas=n
       MultiBinSpreadPlotter(mass, s, cdlm, resList, currDir=currDir, quantity="local maxima from data")
       MultiBinSpreadPlotter(mass, s, cflm, resList, currDir=currDir, quantity="local maxima from fits")
 
-  else:#resList=[.01,.02,.05,.1,.2,.5], method='leastsq',similarSigma=True, makePlots=True,spreadPlot=True, sameSkew=True, useWeights=True, ltrim=-1, rtrim=-1, skewList=np.array([]), skew0='NaN'): 
-    (cfrx,ccex, cdlm, cflm) = fitScanX(m,s,peaksList,peakSigmas=peakSigmas,initGamma=initGamma,resList=resList,method=method,makePlots=makePlots,useWeights=useWeights,sameSkew=sameSkew,skew0=skew0,skewList=skewList,ltrim=ltrim,rtrim=rtrim,sameSigma=sameSigma,similarSigma=similarSigma,linearTerm=linearTerm, frac=frac, nSamps=nSamps)
-    #(cfrx,ccex, cdlm, cflm) = fitScanX(m,s,peaksList,peakSigmas=peakSigmas,initGamma=initGamma,resList=resList,method=method,makePlots=makePlots,useWeights=useWeights,sameSkew=sameSkew,skew0=skew0,skewList=skewList,ltrim=ltrim,rtrim=rtrim,sameSigma=sameSigma,similarSigma=similarSigma)
+  else:#resList=[.01,.02,.05,.1,.2,.5], method='leastsq',sameGamma=True, makePlots=True,spreadPlot=True, sameSkew=True, useWeights=True, ltrim=-1, rtrim=-1, skewList=np.array([]), skew0='NaN'): 
+    (cfrx,ccex, cdlm, cflm) = fitScanX(m,s,peaksList,peakSigmas=peakSigmas,initGamma=initGamma,resList=resList,method=method,makePlots=makePlots,useWeights=useWeights,sameSkew=sameSkew,skew0=skew0,skewList=skewList,ltrim=ltrim,rtrim=rtrim,sameSigma=sameSigma,sameGamma=sameGamma,linearTerm=linearTerm, frac=frac, nSamps=nSamps)
+    #(cfrx,ccex, cdlm, cflm) = fitScanX(m,s,peaksList,peakSigmas=peakSigmas,initGamma=initGamma,resList=resList,method=method,makePlots=makePlots,useWeights=useWeights,sameSkew=sameSkew,skew0=skew0,skewList=skewList,ltrim=ltrim,rtrim=rtrim,sameSigma=sameSigma,sameGamma=sameGamma)
     finCenterEst = scanFitsFinalEsts(ccex); fce = finCenterEst
     finDatLocMaxEst = scanFitsFinalEsts(cdlm); fdl = finDatLocMaxEst
     finFitLocMaxEst = scanFitsFinalEsts(cflm); ffl = finFitLocMaxEst
@@ -531,10 +522,14 @@ def Scanalyzer(mass, s, peaksList=[13285,13278.8,13272.8,13266.57], peakSigmas=n
   xFile.close()
   return({'fce':fce,'fdl':fdl,'ffl':ffl})
 
-if __name__ == '__main__':
+'''if __name__ == '__main__':
   pd.options.mode.chained_assignment = None  # default='warn' (Pandas keep harassing me and I'm doing nothing wrong!)
-  rewrite=True; ltrim=13256.5; rtrim=13287; sameSigma=True
-  massList=np.array([245])#np.array([242,243,244,245, 247])
+  
+  massList=np.array([244])#np.array([242,243,244,245, 247])
+  rewrite=True; ltrim=13256.5; rtrim=13287; sameSigma=False; sameSkew=False
+  sigmaEst=.5; gammaEst=2; skew0=-2.6; skewList=[-2.5,-2.5,-2,-1.5]
+  resolutionList=[.05,.07,.1,.2,.3]# [.01,.02,.03,.05,.07,.1,.2] [.03,.05,.07,.1,.2,.3] #  struggling a bit with low count statistics for ^{224,225}RaF
+
   allScansBigDic = {}
   for m in massList: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
   colorDict={242:'red', 243:'orange',244:'green',245:'blue',247:'purple'}
@@ -547,17 +542,50 @@ if __name__ == '__main__':
   initCenterEsts={}
   initCenterEsts[242]=[13285,13278.86,13272.76,13266.76]#,13260.35]
   initCenterEsts[243]=[13284.95,13278.80,13272.61,13266.61]#,13260.35]
-  initCenterEsts[244]=[13284.85,13278.70,13272.66,13266.45]#,13260.35]
-  initCenterEsts[245]=[13284.73,13278.60,13272.46,13266.48]#,13260.35]
+  initCenterEsts[244]=[13284.84,13278.67,13272.66,13266.43]#,13260.35]
+  initCenterEsts[245]=[13284.73,13278.60,13272.46,13266.45]#,13260.35]
   initCenterEsts[247]=[13284.54,13278.41,13272.24,13266.05]#,13260.35]
-  sigmaEst=.5; gammaEst=2; skew0=-3
-  resolutionList=[.01,.02,.03,.05,.07,.1,.2,.3]# [.03,.05,.07,.1,.2,.3] #  struggling a bit with low count statistics for ^{224,225}RaF
+  
   for m in massList:
     scanListsList = massScanDic[m]
     peaksList = initCenterEsts[m]
     print("Test: peaksList:\n",peaksList)
     for s in scanListsList:
       print("m=%d, scans:%s, peaksList:%s"%(m,str(s),str(peaksList)))
-      finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peaksList=peaksList,peakSigmas=sigmaEst, sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=True, linearTerm=False, useWeights=True, skew0=skew0, frac=0.45, nSamps=20)
+      finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peaksList=peaksList,peakSigmas=sigmaEst,method='emcee', sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=sameSkew, linearTerm=False, useWeights=True, skew0=skew0,skewList=skewList, frac=0.5, nSamps=4)
+      (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])
+    print("\n\n")'''
+
+if __name__ == '__main__':
+  pd.options.mode.chained_assignment = None  # default='warn' (Pandas keep harassing me and I'm doing nothing wrong!)
+  
+  massList=np.array([242,243,244,247])#np.array([242,243,244,245, 247])
+  rewrite=True; ltrim=13266.5; rtrim=13287; sameSigma=False; sameSkew=False; sameGamma=False
+  sigmaEst=.5; gammaEst=2; skew0=-2.6; skewList=[-2.5,-2,-1]#,-1]
+  resolutionList=[.02,.03,.05,.07,.1]# [.01,.02,.03,.05,.07,.1,.2] [.03,.05,.07,.1,.2,.3] #  struggling a bit with low count statistics for ^{224,225}RaF
+
+  allScansBigDic = {}
+  for m in massList: allScansBigDic[m] = lmd.makeScanToWavemeterDic(m, redo=False, verbose=False)
+  colorDict={242:'red', 243:'orange',244:'green',245:'blue',247:'purple'}
+  massScanDic={}
+  massScanDic[242]=[[2312, 2313]] #These are good individually and combined!
+  massScanDic[243]=[[2302,2303,2308]]#,2283]#2300? #2283(from a different time, when signals weren't as strong. use in future), 2301("wavemeter stopped working in the middle of a peak" + relatively weak signal)
+  massScanDic[244]=[[2304,2305,2306]]#,2307] #possibly remove 2307?
+  massScanDic[245]=[[2309,2310,2320]]#,[2341,2349],2350]#, [2341(75mW),2349],2350("re-tuned TiSa overlap upstairs --> additional 50% improvement")]#,[2346] is a pdl scan though. gross...#2178 is Ti:Sa, but actually gross af#
+  massScanDic[247]=[[2311,2322]]#,[2188,2190]]#(also decent, but from diff era with different rates)
+  initCenterEsts={}
+  initCenterEsts[242]=[13285,13278.86,13272.76]#,13266.76]#,13260.35]
+  initCenterEsts[243]=[13284.9,13278.75,13272.61]#,13266.61]#,13260.35]
+  initCenterEsts[244]=[13284.84,13278.68,13272.59]#,13266.43]#,13260.35]
+  initCenterEsts[245]=[13284.73,13278.60,13272.46]#,13266.45]#,13260.35]
+  initCenterEsts[247]=[13284.53,13278.41,13272.24]#,13266.05]#,13260.35]
+  
+  for m in massList:
+    scanListsList = massScanDic[m]
+    peaksList = initCenterEsts[m]
+    print("Test: peaksList:\n",peaksList)
+    for s in scanListsList:
+      print("m=%d, scans:%s, peaksList:%s"%(m,str(s),str(peaksList)))
+      finalfitResults = Scanalyzer(m,s,rewrite=rewrite,peaksList=peaksList,peakSigmas=sigmaEst,method='emcee', sameSigma=sameSigma,initGamma=gammaEst,resList=resolutionList, ltrim=ltrim, rtrim=rtrim, makePlots=True,sameSkew=sameSkew,sameGamma=sameGamma, linearTerm=False, useWeights=True, skew0=skew0,skewList=skewList, frac=0.8, nSamps=3)
       (fce,fdl,ffl)=(finalfitResults['fce'],finalfitResults['fdl'],finalfitResults['ffl'])
     print("\n\n")

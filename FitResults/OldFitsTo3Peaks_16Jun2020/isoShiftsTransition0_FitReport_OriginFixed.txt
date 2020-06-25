@@ -1,0 +1,3 @@
+Isotope Shift Fit Report for: 0 -> 0 Transition:Beta: [-0.82819874]
+Beta Std Error: [0.11695034]
+Beta Covariance[[0.00023139]]

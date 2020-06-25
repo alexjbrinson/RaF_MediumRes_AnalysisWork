@@ -1,0 +1,68 @@
+Fit Report for: Mass = 245, Scan = [2309, 2310, 2320], Resolution = 0.300, randSamp#13
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 289
+    # data points      = 102
+    # variables        = 13
+    chi-square         = 1.86228235
+    reduced chi-square = 0.02092452
+    Akaike info crit   = -382.323341
+    Bayesian info crit = -348.198694
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   327.448725 +/- 2.78310381 (0.85%) (init = 331.7514)
+    sv0_amplitude:  3138.43157 +/- 60.4911406 (1.93%) (init = 2697.958)
+    sv0_center:     13284.7211 +/- 0.01240792 (0.00%) (init = 13284.73)
+    sv0_sigma:      0.47887049 +/- 0.19204099 (40.10%) (init = 0.5)
+    sv0_skew:      -2.95222146 +/- 1.26491677 (42.85%) (init = -2)
+    sv0_gamma:      1.74579383 +/- 0.07972605 (4.57%) (init = 2)
+    sv0_height:     2614.59650 +/- 1077.22860 (41.20%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       1.72456109 +/- 0.69159915 (40.10%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  1602.73975 +/- 37.4805418 (2.34%) (init = 1752.528)
+    sv1_center:     13278.5795 +/- 0.01755561 (0.00%) (init = 13278.6)
+    sv1_sigma:      0.47887049 +/- 0.19204099 (40.10%) == 'sv0_sigma'
+    sv1_skew:      -2.95222146 +/- 1.26491677 (42.85%) == 'sv0_skew'
+    sv1_gamma:      1.74579383 +/- 0.07972605 (4.57%) == 'sv0_gamma'
+    sv1_height:     1335.22674 +/- 31.2246710 (2.34%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       1.72456109 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  717.405936 +/- 30.7176247 (4.28%) (init = 803.968)
+    sv2_center:     13272.4528 +/- 0.03416911 (0.00%) (init = 13272.46)
+    sv2_sigma:      0.47887049 +/- 0.19204099 (40.10%) == 'sv0_sigma'
+    sv2_skew:      -2.95222146 +/- 1.26491677 (42.85%) == 'sv0_skew'
+    sv2_gamma:      1.74579383 +/- 0.07972605 (4.57%) == 'sv0_gamma'
+    sv2_height:     597.663834 +/- 25.5905514 (4.28%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       1.72456109 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  219.853147 +/- 26.9410167 (12.25%) (init = 275.4565)
+    sv3_center:     13266.4530 +/- 0.15323526 (0.00%) (init = 13266.48)
+    sv3_sigma:      0.10000022 +/- 1.67206048 (1672.06%) (init = 0.5)
+    sv3_skew:      -2.95222146 +/- 1.26491677 (42.85%) == 'sv0_skew'
+    sv3_gamma:      1.74579383 +/- 0.07972605 (4.57%) == 'sv0_gamma'
+    sv3_height:     877.085275 +/- 14620.6256 (1666.96%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.36013179 +/- 6.02160810 (1672.06%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv3_center, sv3_sigma)        =  0.995
+    C(sv0_sigma, sv0_skew)          = -0.988
+    C(sv0_sigma, sv0_gamma)         = -0.846
+    C(sv0_skew, sv0_gamma)          =  0.819
+    C(l0_intercept, sv0_amplitude)  = -0.630
+    C(l0_intercept, sv0_gamma)      = -0.626
+    C(sv0_amplitude, sv0_gamma)     =  0.621
+    C(sv0_amplitude, sv0_sigma)     = -0.553
+    C(sv0_amplitude, sv0_skew)      =  0.550
+    C(l0_intercept, sv1_amplitude)  = -0.488
+    C(sv0_center, sv0_skew)         = -0.463
+    C(sv0_skew, sv1_center)         = -0.452
+    C(l0_intercept, sv2_amplitude)  = -0.449
+    C(l0_intercept, sv3_amplitude)  = -0.434
+    C(l0_intercept, sv0_skew)       = -0.423
+    C(sv0_center, sv0_sigma)        =  0.421
+    C(l0_intercept, sv0_sigma)      =  0.421
+    C(sv3_amplitude, sv3_sigma)     =  0.419
+    C(sv0_sigma, sv1_center)        =  0.411
+    C(sv3_amplitude, sv3_center)    =  0.403
+    C(sv0_center, sv1_center)       =  0.331
+    C(sv0_gamma, sv1_amplitude)     =  0.301
+    C(sv0_gamma, sv3_amplitude)     =  0.268
+    C(sv0_amplitude, sv3_amplitude) =  0.263

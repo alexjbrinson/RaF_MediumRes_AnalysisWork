@@ -1,0 +1,70 @@
+Fit Report for: Mass = 245, Scan = [2309, 2310, 2320], Resolution = 0.070, randSamp#2
+[[Model]]
+    (((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 259
+    # data points      = 294
+    # variables        = 16
+    chi-square         = 1.72510637
+    reduced chi-square = 0.00620542
+    Akaike info crit   = -1478.65757
+    Bayesian info crit = -1419.72029
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   318.678583 +/- 2.70822274 (0.85%) (init = 329.3345)
+    sv0_amplitude:  3228.88359 +/- 48.7914447 (1.51%) (init = 3241.165)
+    sv0_center:     13284.7416 +/- 0.00922534 (0.00%) (init = 13284.73)
+    sv0_sigma:      0.46664677 +/- 0.19137408 (41.01%) (init = 0.5)
+    sv0_skew:      -3.31321310 +/- 1.44939191 (43.75%) (init = -2.5)
+    sv0_gamma:      1.92491637 +/- 0.07336941 (3.81%) (init = 2)
+    sv0_height:     2760.41396 +/- 1156.41707 (41.89%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       1.68053966 +/- 0.68919740 (41.01%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  1583.16836 +/- 36.4379959 (2.30%) (init = 2088.877)
+    sv1_center:     13278.5663 +/- 0.01308723 (0.00%) (init = 13278.6)
+    sv1_sigma:      0.33415466 +/- 0.28353783 (84.85%) (init = 0.5)
+    sv1_skew:      -2.42102637 +/- 2.16469092 (89.41%) (init = -2.5)
+    sv1_gamma:      1.62302400 +/- 0.09393282 (5.79%) (init = 2)
+    sv1_height:     1890.12123 +/- 1626.94486 (86.08%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       1.20339453 +/- 1.02110762 (84.85%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  794.634158 +/- 37.4101409 (4.71%) (init = 917.641)
+    sv2_center:     13272.4970 +/- 0.02328807 (0.00%) (init = 13272.46)
+    sv2_sigma:      0.37074504 +/- 0.67795417 (182.86%) (init = 0.5)
+    sv2_skew:      -3.11590412 +/- 5.97234533 (191.67%) (init = -1)
+    sv2_gamma:      1.99785557 +/- 0.23563829 (11.79%) (init = 2)
+    sv2_height:     855.070594 +/- 1587.73587 (185.68%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       1.33516781 +/- 2.44152314 (182.86%) == '3.6013100*sv2_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv1_sigma, sv1_skew)          = -0.994
+    C(sv2_sigma, sv2_skew)          = -0.992
+    C(sv0_sigma, sv0_skew)          = -0.990
+    C(sv2_sigma, sv2_gamma)         = -0.887
+    C(sv2_skew, sv2_gamma)          =  0.868
+    C(sv0_sigma, sv0_gamma)         = -0.852
+    C(sv1_sigma, sv1_gamma)         = -0.850
+    C(sv1_skew, sv1_gamma)          =  0.830
+    C(sv0_skew, sv0_gamma)          =  0.828
+    C(sv2_amplitude, sv2_gamma)     =  0.761
+    C(sv1_amplitude, sv1_gamma)     =  0.680
+    C(l0_intercept, sv0_amplitude)  = -0.667
+    C(sv0_amplitude, sv0_gamma)     =  0.655
+    C(sv2_amplitude, sv2_sigma)     = -0.591
+    C(sv2_amplitude, sv2_skew)      =  0.589
+    C(sv0_amplitude, sv0_sigma)     = -0.572
+    C(sv0_amplitude, sv0_skew)      =  0.570
+    C(l0_intercept, sv2_amplitude)  = -0.548
+    C(sv1_center, sv1_skew)         = -0.544
+    C(sv0_center, sv0_skew)         = -0.526
+    C(sv1_amplitude, sv1_sigma)     = -0.522
+    C(sv1_amplitude, sv1_skew)      =  0.521
+    C(sv1_center, sv1_sigma)        =  0.507
+    C(l0_intercept, sv1_amplitude)  = -0.474
+    C(sv0_center, sv0_sigma)        =  0.456
+    C(l0_intercept, sv0_gamma)      = -0.433
+    C(sv2_center, sv2_skew)         = -0.394
+    C(l0_intercept, sv2_gamma)      = -0.385
+    C(l0_intercept, sv1_gamma)      = -0.379
+    C(sv2_center, sv2_sigma)        =  0.373
+    C(sv0_amplitude, sv2_amplitude) =  0.323
+    C(l0_intercept, sv0_skew)       = -0.272
+    C(l0_intercept, sv0_sigma)      =  0.258

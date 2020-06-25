@@ -1,44 +1,62 @@
-Transitions      0->0                                               \
-Methods      SkewedMu             LocMaxDat              LocMaxFit   
-Stats           shift uncertainty     shift uncertainty      shift   
-242          0.264935   0.0146367  0.287599    0.153154   0.246566   
-243           0.17228   0.0276161  0.153612    0.169799  0.0978717   
-244          0.116145   0.0338262 -0.153913    0.185987 -0.0467667   
-245                 0           0         0           0          0   
-247         -0.188069   0.0211183 -0.305395    0.157773  -0.228329   
+Transitions      0->0                                                 \
+Methods      SkewedMu               LocMaxDat              LocMaxFit   
+Stats           shift uncertainty       shift uncertainty      shift   
+242          0.266823  0.00369258    0.345187   0.0263026   0.269813   
+243          0.176332  0.00642108 -0.00179605   0.0287131   0.179256   
+244          0.106105  0.00721456   -0.204872   0.0654231 -0.0200073   
+245                 0           0           0           0          0   
+247         -0.192874  0.00525506   -0.338581   0.0298109  -0.201861   
 
-Transitions                   1->1                                     \
-Methods                   SkewedMu              LocMaxDat               
-Stats       uncertainty      shift uncertainty      shift uncertainty   
-242            0.014791   0.264549   0.0196898   0.369917     0.14288   
-243           0.0288989   0.203676   0.0457315  0.0999268    0.160534   
-244           0.0343681  0.0855303   0.0473235 -0.0172875    0.170543   
-245                   0          0           0          0           0   
-247           0.0214213  -0.183232   0.0287181   -0.10812    0.142452   
+Transitions                                         1->1              \
+Methods                 LocMaxPoly              SkewedMu               
+Stats       uncertainty      shift uncertainty     shift uncertainty   
+242           0.0169672   0.272272  0.00961292  0.267987  0.00520345   
+243           0.0205834   0.153567   0.0117448  0.173972   0.0136836   
+244           0.0159213  -0.174455   0.0175883  0.111002   0.0131726   
+245                   0          0           0         0           0   
+247           0.0187012  -0.201984   0.0130422 -0.175532  0.00840862   
 
-Transitions                             2->2                         \
-Methods      LocMaxFit              SkewedMu              LocMaxDat   
-Stats            shift uncertainty     shift uncertainty      shift   
-242           0.246235   0.0197927  0.289732   0.0347549   0.433641   
-243           0.126435   0.0462022  0.163287    0.038501   0.301203   
-244         -0.0791946   0.0477434  0.225231   0.0755642  0.0735419   
-245                  0           0         0           0          0   
-247            -0.2239    0.028963 -0.224977   0.0527167   -0.24006   
+Transitions                                                            \
+Methods      LocMaxDat              LocMaxFit              LocMaxPoly   
+Stats            shift uncertainty      shift uncertainty       shift   
+242           0.330785   0.0570605   0.238474   0.0135911    0.253072   
+243          0.0166418   0.0768456  0.0995602   0.0371913    0.103567   
+244          -0.119215   0.0596146    0.01377   0.0247616 -0.00625517   
+245                  0           0          0           0           0   
+247          -0.182769   0.0564464  -0.204726   0.0202193   -0.204784   
 
-Transitions                                          3->3              \
-Methods                  LocMaxFit               SkewedMu               
-Stats       uncertainty      shift uncertainty      shift uncertainty   
-242            0.163773   0.271548   0.0348237   0.285497   0.0808228   
-243            0.168388  0.0711724   0.0392181   0.112176   0.0724725   
-244            0.153268  0.0154858    0.075434 -0.0263683    0.121777   
-245                   0          0           0          0           0   
-247            0.212289  -0.288748   0.0529074  -0.402326    0.112113   
+Transitions                  2->2                                     \
+Methods                  SkewedMu              LocMaxDat               
+Stats       uncertainty     shift uncertainty      shift uncertainty   
+242          0.00917624  0.268598  0.00999353   0.607827   0.0337644   
+243           0.0143859   0.17628   0.0114358   0.477566    0.032999   
+244           0.0221199  0.192865   0.0613808   0.504134    0.100967   
+245                   0         0           0          0           0   
+247           0.0178125 -0.243454   0.0187351  0.0280148   0.0434742   
 
-Transitions                                              
-Methods     LocMaxDat             LocMaxFit              
-Stats           shift uncertainty     shift uncertainty  
-242          0.136499     0.25345  0.190472   0.0811184  
-243         -0.130781    0.231629 -0.270414   0.0738829  
-244         -0.516612    0.254017 -0.619498    0.123927  
-245                 0           0         0           0  
-247         -0.812755    0.258953 -0.927604    0.113482  
+Transitions                                                   3->3  \
+Methods     LocMaxFit             LocMaxPoly              SkewedMu   
+Stats           shift uncertainty      shift uncertainty     shift   
+242          0.299507   0.0238977   0.366872   0.0154985  0.302232   
+243          0.206194   0.0375048   0.277833   0.0286142  0.215314   
+244          -0.15126   0.0358039 -0.0621809   0.0881611       NaN   
+245                 0           0          0           0         0   
+247         -0.256718   0.0266183  -0.211293   0.0377934       NaN   
+
+Transitions                                                           \
+Methods                  LocMaxDat             LocMaxFit               
+Stats       uncertainty      shift uncertainty     shift uncertainty   
+242           0.0258797  0.0486737   0.0876832  0.257629   0.0268501   
+243           0.0760147 -0.0799192   0.0605447 -0.419987   0.0759884   
+244                 NaN  -0.168384   0.0542709       NaN         NaN   
+245                   0          0           0         0           0   
+247                 NaN   -0.26163   0.0180713       NaN         NaN   
+
+Transitions                         
+Methods     LocMaxPoly              
+Stats            shift uncertainty  
+242           0.270847   0.0375154  
+243          0.0813615   0.0675014  
+244         -0.0206958    0.402326  
+245                  0           0  
+247          -0.283102    0.513017  

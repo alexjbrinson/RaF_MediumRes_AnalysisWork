@@ -1,0 +1,68 @@
+Fit Report for: Mass = 245, Scan = [2309, 2310, 2320], Resolution = 0.200, randSamp#17
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 1622
+    # data points      = 153
+    # variables        = 13
+    chi-square         = 1.66360619
+    reduced chi-square = 0.01188290
+    Akaike info crit   = -665.781892
+    Bayesian info crit = -626.386199
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   326.598040 +/- 2.49793607 (0.76%) (init = 330.4207)
+    sv0_amplitude:  3182.12556 +/- 55.1384384 (1.73%) (init = 3078.204)
+    sv0_center:     13284.7207 +/- 0.01241913 (0.00%) (init = 13284.73)
+    sv0_sigma:      0.25272235 +/- 0.31672606 (125.33%) (init = 0.5)
+    sv0_skew:      -1.57526918 +/- 2.02043816 (128.26%) (init = -2)
+    sv0_gamma:      1.78912343 +/- 0.06958574 (3.89%) (init = 2)
+    sv0_height:     5023.23794 +/- 6341.48130 (126.24%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       0.91013152 +/- 1.14062872 (125.33%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  1587.84446 +/- 34.6034285 (2.18%) (init = 1907.768)
+    sv1_center:     13278.5848 +/- 0.01640879 (0.00%) (init = 13278.6)
+    sv1_sigma:      0.25272235 +/- 0.31672606 (125.33%) == 'sv0_sigma'
+    sv1_skew:      -1.57526918 +/- 2.02043816 (128.26%) == 'sv0_skew'
+    sv1_gamma:      1.78912343 +/- 0.06958574 (3.89%) == 'sv0_gamma'
+    sv1_height:     2506.53860 +/- 54.6242601 (2.18%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.91013152 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  709.464157 +/- 28.2933626 (3.99%) (init = 820.0978)
+    sv2_center:     13272.4547 +/- 0.03100387 (0.00%) (init = 13272.46)
+    sv2_sigma:      0.25272235 +/- 0.31672606 (125.33%) == 'sv0_sigma'
+    sv2_skew:      -1.57526918 +/- 2.02043816 (128.26%) == 'sv0_skew'
+    sv2_gamma:      1.78912343 +/- 0.06958574 (3.89%) == 'sv0_gamma'
+    sv2_height:     1119.94552 +/- 44.6633202 (3.99%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       0.91013152 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  217.766544 +/- 23.7527096 (10.91%) (init = 345.4672)
+    sv3_center:     13266.4274 +/- 0.16474064 (0.00%) (init = 13266.48)
+    sv3_sigma:      0.10000019 +/- 1.36896645 (1368.96%) (init = 0.5)
+    sv3_skew:      -1.57526918 +/- 2.02043816 (128.26%) == 'sv0_skew'
+    sv3_gamma:      1.78912343 +/- 0.06958574 (3.89%) == 'sv0_gamma'
+    sv3_height:     868.761203 +/- 11858.1938 (1364.95%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.36013169 +/- 4.93007254 (1368.96%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv0_sigma, sv0_skew)         = -0.999
+    C(sv3_center, sv3_sigma)       =  0.958
+    C(sv0_sigma, sv0_gamma)        = -0.825
+    C(sv0_skew, sv0_gamma)         =  0.816
+    C(l0_intercept, sv0_gamma)     = -0.619
+    C(l0_intercept, sv0_amplitude) = -0.607
+    C(sv0_amplitude, sv0_gamma)    =  0.587
+    C(sv0_amplitude, sv0_sigma)    = -0.524
+    C(sv0_amplitude, sv0_skew)     =  0.522
+    C(sv0_center, sv0_skew)        = -0.509
+    C(sv0_center, sv0_sigma)       =  0.486
+    C(l0_intercept, sv1_amplitude) = -0.473
+    C(sv0_skew, sv1_center)        = -0.457
+    C(l0_intercept, sv3_amplitude) = -0.447
+    C(sv0_sigma, sv1_center)       =  0.445
+    C(l0_intercept, sv2_amplitude) = -0.443
+    C(l0_intercept, sv0_skew)      = -0.412
+    C(l0_intercept, sv0_sigma)     =  0.412
+    C(sv0_center, sv1_center)      =  0.383
+    C(sv3_amplitude, sv3_sigma)    =  0.371
+    C(sv3_amplitude, sv3_center)   =  0.353
+    C(sv0_gamma, sv1_amplitude)    =  0.284
+    C(sv0_skew, sv2_center)        = -0.255
+    C(sv0_sigma, sv2_center)       =  0.251

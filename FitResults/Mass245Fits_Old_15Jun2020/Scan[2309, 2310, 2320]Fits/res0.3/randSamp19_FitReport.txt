@@ -1,0 +1,68 @@
+Fit Report for: Mass = 245, Scan = [2309, 2310, 2320], Resolution = 0.300, randSamp#19
+[[Model]]
+    ((((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(skewed_voigt, prefix='sv3_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 247
+    # data points      = 102
+    # variables        = 13
+    chi-square         = 2.05464561
+    reduced chi-square = 0.02308591
+    Akaike info crit   = -372.296682
+    Bayesian info crit = -338.172036
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   325.800420 +/- 2.92163895 (0.90%) (init = 329.3613)
+    sv0_amplitude:  3177.46740 +/- 63.7996586 (2.01%) (init = 2734.922)
+    sv0_center:     13284.7281 +/- 0.01322946 (0.00%) (init = 13284.73)
+    sv0_sigma:      0.38036737 +/- 0.25277926 (66.46%) (init = 0.5)
+    sv0_skew:      -2.45349195 +/- 1.69954693 (69.27%) (init = -2)
+    sv0_gamma:      1.80927722 +/- 0.08392902 (4.64%) (init = 2)
+    sv0_height:     3332.63644 +/- 2251.72635 (67.57%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       1.36982081 +/- 0.91033647 (66.46%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  1594.43981 +/- 39.4958746 (2.48%) (init = 1703.056)
+    sv1_center:     13278.5766 +/- 0.01845342 (0.00%) (init = 13278.6)
+    sv1_sigma:      0.38036737 +/- 0.25277926 (66.46%) == 'sv0_sigma'
+    sv1_skew:      -2.45349195 +/- 1.69954693 (69.27%) == 'sv0_skew'
+    sv1_gamma:      1.80927722 +/- 0.08392902 (4.64%) == 'sv0_gamma'
+    sv1_height:     1672.30298 +/- 41.4246234 (2.48%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       1.36982081 +/- 0.00000000 (0.00%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  716.089324 +/- 32.3528935 (4.52%) (init = 809.8932)
+    sv2_center:     13272.4452 +/- 0.03452950 (0.00%) (init = 13272.46)
+    sv2_sigma:      0.38036737 +/- 0.25277926 (66.46%) == 'sv0_sigma'
+    sv2_skew:      -2.45349195 +/- 1.69954693 (69.27%) == 'sv0_skew'
+    sv2_gamma:      1.80927722 +/- 0.08392902 (4.64%) == 'sv0_gamma'
+    sv2_height:     751.058965 +/- 33.9328208 (4.52%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       1.36982081 +/- 0.00000000 (0.00%) == '3.6013100*sv2_sigma'
+    sv3_amplitude:  232.940930 +/- 29.3416890 (12.60%) (init = 293.4464)
+    sv3_center:     13266.4491 +/- 0.18484391 (0.00%) (init = 13266.48)
+    sv3_sigma:      0.10000075 +/- 3.90839834 (3908.37%) (init = 0.5)
+    sv3_skew:      -2.45349195 +/- 1.69954693 (69.27%) == 'sv0_skew'
+    sv3_gamma:      1.80927722 +/- 0.08392902 (4.64%) == 'sv0_gamma'
+    sv3_height:     929.292972 +/- 36265.1852 (3902.45%) == '0.3989423*sv3_amplitude/max(2.220446049250313e-16, sv3_sigma)'
+    sv3_fwhm:       0.36013369 +/- 14.0753540 (3908.37%) == '3.6013100*sv3_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv0_sigma, sv0_skew)          = -0.995
+    C(sv3_center, sv3_sigma)        =  0.994
+    C(sv0_sigma, sv0_gamma)         = -0.842
+    C(sv0_skew, sv0_gamma)          =  0.826
+    C(l0_intercept, sv0_amplitude)  = -0.628
+    C(l0_intercept, sv0_gamma)      = -0.622
+    C(sv0_amplitude, sv0_gamma)     =  0.612
+    C(sv0_amplitude, sv0_sigma)     = -0.542
+    C(sv0_amplitude, sv0_skew)      =  0.540
+    C(l0_intercept, sv1_amplitude)  = -0.485
+    C(sv3_amplitude, sv3_sigma)     =  0.471
+    C(sv3_amplitude, sv3_center)    =  0.455
+    C(sv0_center, sv0_skew)         = -0.452
+    C(l0_intercept, sv2_amplitude)  = -0.449
+    C(sv0_skew, sv1_center)         = -0.443
+    C(sv0_center, sv0_sigma)        =  0.422
+    C(l0_intercept, sv3_amplitude)  = -0.421
+    C(l0_intercept, sv0_skew)       = -0.417
+    C(sv0_sigma, sv1_center)        =  0.417
+    C(l0_intercept, sv0_sigma)      =  0.415
+    C(sv0_center, sv1_center)       =  0.338
+    C(sv0_gamma, sv1_amplitude)     =  0.292
+    C(sv0_gamma, sv3_amplitude)     =  0.271
+    C(sv0_amplitude, sv3_amplitude) =  0.258

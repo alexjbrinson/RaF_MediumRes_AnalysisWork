@@ -290,7 +290,7 @@ def randSubsets(df, frac=0.1, nSamps=100):
 
 def makeUseable(df, nBins=100, resolution=-1, noNaNsense=True, cropSparseEnds=True, normalizedOn=False,ltrim=-1,rtrim=-1, verbose=False):
   #converts (usually huge) time-centric dataframes from rawDatPrep() into spectrum-friendly wavenumber-based dataframes
-  kVals = np.array(df.loc[:,"wavenumber"]); kRange=max(kVals)-min(kVals)
+  kVals = np.array(df.loc[:,"wavenumber"]); kRange=np.nanmax(kVals)-np.nanmin(kVals)
   if kRange>0:
     if verbose: print("testing wavenumber range: min=%.3f; max=%.3f"%(min(kVals),max(kVals)))
     if resolution<0: binQuant = nBins
@@ -365,27 +365,77 @@ def doEverything(m, scanInd, wavenumber, nBins=100, resolution=-1, writeToFile=F
   if makePlot: plotData(output, m, scanInd, wavenumber, nBins=nBins, resolution=resolution)
   return(output)
 
+def smoother(dframe, smoothWidth=1):#, meth='def', σ = 1):
+  print("test: smoothWidth = ",smoothWidth)
+  xDat=np.array(dframe.loc[:,'wavenumber_mean']); yDat=np.array(dframe.loc[:,'signal_value'])
+  σyDat = np.array(dframe.loc[:,'signal_uncertainty']); yVarDat=np.square(σyDat)
+  durDat=np.array(dframe.loc[:,'measurement_duration'])
+  test=1/(np.abs(np.linspace(-smoothWidth, smoothWidth,num=2*smoothWidth+1))+1)
+  norm=1/np.sum(test)
+  #print("test:",test,"norm = ",norm)
+  smoothedX = np.zeros(len(xDat)-2*smoothWidth); smoothedY = np.zeros(len(xDat)-2*smoothWidth)
+  smoothedVar = np.zeros(len(xDat)-2*smoothWidth); smoothedDur = np.zeros(len(xDat)-2*smoothWidth)
+  for i in range(-smoothWidth, smoothWidth+1):
+    #print("i=%d, um:\n"%i,norm*(1/(np.abs(i)+1))*xDat[smoothWidth+i:-(smoothWidth-i)])
+    if i==smoothWidth:
+      smoothedX+=norm*(1/(np.abs(i)+1))*xDat[smoothWidth+i:]
+      smoothedY+=norm*(1/(np.abs(i)+1))*yDat[smoothWidth+i:]
+      smoothedVar+=norm*(1/(np.abs(i)+1))*yVarDat[smoothWidth+i:]
+      smoothedDur+=norm*(1/(np.abs(i)+1))*durDat[smoothWidth+i:]
+    else: 
+      smoothedX+=norm*(1/(np.abs(i)+1))*xDat[smoothWidth+i:-(smoothWidth-i)]
+      smoothedY+=norm*(1/(np.abs(i)+1))*yDat[smoothWidth+i:-(smoothWidth-i)]
+      smoothedVar+=norm*(1/(np.abs(i)+1))*yVarDat[smoothWidth+i:-(smoothWidth-i)]
+      smoothedDur+=norm*(1/(np.abs(i)+1))*durDat[smoothWidth+i:-(smoothWidth-i)]
+  smoothDF = pd.DataFrame({"wavenumber_mean"   : smoothedX, #aggDat.loc[:,('wavenumber','mean')], #small change, but reported wavenumber is now weighted by measurement time.
+                        "signal_value"         : smoothedY,
+                        "signal_uncertainty"   : np.sqrt(smoothedVar), #resorting to this mess bc numpy is throwing the weirdest fkn error...
+                        "measurement_duration" : smoothedDur},index=range(len(smoothedX)) )
+  return(smoothDF)
+
 if __name__ == '__main__':
-  mass = 244
-  scanIndex = [2304,2305,2306]
+  mass = 247
+  scanIndex1 = [2311,2322]
+  scanIndex2 = [2188,2190]#(also decent, but from diff era with different rates)
   #wmNum = whichWavemeter(mass,scanIndex)
   #wmNum = 'pdl' if wmNum=='pdl' else int(wmNum)
-  res=.1
+  res=.01
+  smoothWidth=3
   
-  mfba =  mergeDatRaw(mass, scanIndex)#, wmNum, cleanWM=True, verbose=False)
+  mfba1 =  mergeDatRaw(mass, scanIndex1)#, wmNum, cleanWM=True, verbose=False)
+  mfba2 =  mergeDatRaw(mass, scanIndex2)
   #print("test 9:\n", mfba.head)
   #print("test 10:\n", mfba.tail)
-  output = makeUseable(mfba, resolution=res)
+  output1 = makeUseable(mfba1, resolution=res)
+  smoothedOut1 = smoother(output1, smoothWidth=smoothWidth)
   #print("test11:\n", output)
-  plotData(output,title=r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str(scanIndex), res), fig=1)
+  #plotData(output,title=r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str(scanIndex), res), fig=1)
+  #plotData(smoothedOut,title=r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}; smoothed with 3 neighbors$'%(str(scanIndex), res), fig=2)
+  plt.errorbar(x=output1.loc[:,'wavenumber_mean'], y=output1.loc[:,'signal_value'], yerr=output1.loc[:,'signal_uncertainty'], fmt="-", markersize=3, color = 'blue', ecolor='blue', alpha=.75, label='unsmoothed')
+  plt.fill_between(output1.loc[:,'wavenumber_mean'],y1=output1.loc[:,'signal_value'], y2=0, color='blue', alpha=0.2)
+  plt.errorbar(x=smoothedOut1.loc[:,'wavenumber_mean'], y=smoothedOut1.loc[:,'signal_value'], yerr=smoothedOut1.loc[:,'signal_uncertainty'], fmt="-", markersize=3, color = 'green', ecolor='green', alpha=1, label='smoothWidth=%d'%smoothWidth)
+  plt.fill_between(smoothedOut1.loc[:,'wavenumber_mean'],y1=smoothedOut1.loc[:,'signal_value'], y2=0, color='green', alpha=0.2)
+  plt.title(r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str(scanIndex1), res))
+  plt.legend()
+
+  output2 = makeUseable(mfba2, resolution=res)
+  smoothedOut2 = smoother(output2, smoothWidth=smoothWidth)
+  plt.figure(2)
+  plt.errorbar(x=output2.loc[:,'wavenumber_mean'], y=output2.loc[:,'signal_value'], yerr=output2.loc[:,'signal_uncertainty'], fmt="-", markersize=3, color = 'blue', ecolor='blue', alpha=.75, label='unsmoothed')
+  plt.fill_between(output2.loc[:,'wavenumber_mean'],y1=output2.loc[:,'signal_value'], y2=0, color='blue', alpha=0.2)
+  plt.errorbar(x=smoothedOut2.loc[:,'wavenumber_mean'], y=smoothedOut2.loc[:,'signal_value'], yerr=smoothedOut2.loc[:,'signal_uncertainty'], fmt="-", markersize=3, color = 'green', ecolor='green', alpha=1, label='smoothWidth=%d'%smoothWidth)
+  plt.fill_between(smoothedOut2.loc[:,'wavenumber_mean'],y1=smoothedOut2.loc[:,'signal_value'], y2=0, color='green', alpha=0.2)
+  plt.title(r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str(scanIndex2), res))
+  plt.legend()
   #output2=makeUseable(mergeDatRaw(mass,[2367,2368]),resolution=res)
   #plotData(output2,title=r'$Ra^{%d}F^{19}$,   $B^2\Delta_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$'%(str([2367, 2368]), res), fig=2)
   
-  subSamps=randSubsets(mfba, 0.25, 20)
+  '''subSamps=randSubsets(mfba, 0.25, 20)
   print("Test:\n", subSamps[0])
   subOut = makeUseable(subSamps[0], resolution=res)
+  print(subOutSmooth)
   plotData(subOut,title=r'$Ra^{%d}F^{19}$,   $A^2\Pi_{1/2} \leftarrow X^2\Sigma^{+}$, $\Delta v=0$'%(mass-19)+'\nScan: %s, Resolution=%.2f $cm^{-1}$\nrandom subsample'%(str(scanIndex), res), fig=2)
-  #doEverything(234, 2127,)
+  #doEverything(234, 2127,)'''
 
   '''m=242;scans=[2312, 2313]
   mfba=mergeDatRaw(m,scans, verbose=True)
@@ -393,4 +443,7 @@ if __name__ == '__main__':
   output = makeUseable(mfba, resolution=.07)
   plotData(output, m, 2312, 2, resolution=.07)
 '''
+  totCounts1 = mfba1.agg({'events_per_bunch':'sum'}); print('test:total count number1 = ', totCounts1)
+  totCounts2 = mfba2.agg({'events_per_bunch':'sum'}); print('test:total count number2 = ', totCounts2)
+
   plt.show()

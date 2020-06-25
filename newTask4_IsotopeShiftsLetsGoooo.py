@@ -148,15 +148,18 @@ def shiftVsChargeRadPlotter_OneMethodSlice(shiftsFrame, i, deltaRSqDic,sigmaRSqD
     if verbose and j==0: 
       output.pprint()
     if forceOrigin:
-      allFits[j,0,:]=np.array([output.beta[0],output.sd_beta[0]])
+      #allFits[j,0,:]=np.array([output.beta[0],output.sd_beta[0]])
+      allFits[j,0,:]=np.array([output.beta[0],math.sqrt(output.cov_beta[0])])
       allFits[j,1,:]=np.zeros(2)
       fitReportFile = open('./FitResults/isoShiftsTransition%d_FitReport_OriginFixed.txt'%j,'w+')
       plt.errorbar(x=0, y=0, fmt="o", color=color, markersize=6)
       plt.errorbar(x=xDat, y=yDat, xerr=xErr, yerr=yErr, fmt="o",
-      label=r"$%d \rightarrow %d$"%(j,j)+'\n'+r'$\delta\nu=(%.2f\,\pm %.2f)\, \delta\langle r^2\rangle$'%(allFits[j,0,0],allFits[j,0,1]), color=color, markersize=8)
+      label=r"$%d \rightarrow %d$"%(j,j)+'\n'+r'$\delta\nu=(%.2f\,\pm %.3f)\, \delta\langle r^2\rangle$'%(allFits[j,0,0],allFits[j,0,1]), color=color, markersize=8)
     else:
-      allFits[j,0,:]=np.array([output.beta[0],output.sd_beta[0]])
-      allFits[j,1,:]=np.array([output.beta[1],output.sd_beta[1]])
+      #allFits[j,0,:]=np.array([output.beta[0],output.sd_beta[0]])
+      #allFits[j,1,:]=np.array([output.beta[1],output.sd_beta[1]])
+      allFits[j,0,:]=np.array([output.beta[0],math.sqrt(output.cov_beta[0,0])])
+      allFits[j,1,:]=np.array([output.beta[1],math.sqrt(output.cov_beta[1,1])])
       fitReportFile = open('./FitResults/isoShiftsTransition%d_FitReport'%j,'w+')
       plt.errorbar(x=0, y=0, fmt="o", color=color, markersize=6)
       plt.errorbar(x=xDat, y=yDat, xerr=xErr, yerr=yErr, fmt="o",
@@ -288,8 +291,8 @@ if __name__ == '__main__':
 
   '''shift vs mass plots'''
   for i in range(len(transitionLabels)):   shiftVsMassPlotter_OneTransitionSlice(isoShiftsFrame,i,saveFig=True, closeFig=True) #shift vs mass plots to compare methods
-  for i in range(len(estimationMethodLabels)): shiftVsChargeRadPlotter_OneMethodSlice(isoShiftsFrame,i,dRsqDic,dRsqSigmaDic,refMass=245,saveFig=True,forceOrigin=True, closeFig=not(i==0),verbose=(i==0)) #shift vs mass plots to compare transitions
-    
+  for i in range(len(estimationMethodLabels)): shiftVsChargeRadPlotter_OneMethodSlice(isoShiftsFrame,i,dRsqDic,dRsqSigmaDic,refMass=245,saveFig=True,forceOrigin=False, closeFig=True) #shift vs δ charge radius plots to compare transitions
+  for i in range(len(estimationMethodLabels)): shiftVsChargeRadPlotter_OneMethodSlice(isoShiftsFrame,i,dRsqDic,dRsqSigmaDic,refMass=245,saveFig=True,forceOrigin=True, closeFig=not(i==0),verbose=(i==0)) #this time forcing fits to pass through origin
   '''importTestFrame=pd.DataFrame(data=np.loadtxt('./FitResults/OutputFiles/isoShiftsFrame.csv'), index=massList, columns = pd.MultiIndex.from_product([transitionLabels,estimationMethodLabels, ['shift','uncertainty']], names=['Shifts','Methods','Stats']) )
   print("Testing data frame importability. importTestFrame==isoShiftsFrame: ", np.all((importTestFrame-isoShiftsFrame).values==0))'''
   plt.show()
