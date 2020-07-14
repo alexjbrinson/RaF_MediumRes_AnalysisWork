@@ -1,0 +1,75 @@
+[[Model]]
+    (((Model(skewed_voigt, prefix='sv0_') + Model(skewed_voigt, prefix='sv1_')) + Model(skewed_voigt, prefix='sv2_')) + Model(linear, prefix='l0_'))
+[[Fit Statistics]]
+    # fitting method   = leastsq
+    # function evals   = 455
+    # data points      = 990
+    # variables        = 16
+    chi-square         = 0.37960215
+    reduced chi-square = 3.8974e-04
+    Akaike info crit   = -7755.67312
+    Bayesian info crit = -7677.30985
+[[Variables]]
+    l0_slope:       0 (fixed)
+    l0_intercept:   337.067790 +/- 1.29794676 (0.39%) (init = 332.1638)
+    sv0_amplitude:  3097.23613 +/- 23.9081658 (0.77%) (init = 3391.51)
+    sv0_center:     13284.7265 +/- 0.00460576 (0.00%) (init = 13284.68)
+    sv0_sigma:      0.34401768 +/- 0.10839005 (31.51%) (init = 0.5)
+    sv0_skew:      -2.14693673 +/- 0.70610975 (32.89%) (init = -2.5)
+    sv0_gamma:      1.84812245 +/- 0.03553481 (1.92%) (init = 2)
+    sv0_height:     3591.72966 +/- 1148.56151 (31.98%) == '0.3989423*sv0_amplitude/max(2.220446049250313e-16, sv0_sigma)'
+    sv0_fwhm:       1.23891431 +/- 0.39034619 (31.51%) == '3.6013100*sv0_sigma'
+    sv1_amplitude:  1511.01907 +/- 19.8290335 (1.31%) (init = 2230.831)
+    sv1_center:     13278.5566 +/- 0.00691418 (0.00%) (init = 13278.52)
+    sv1_sigma:      0.20830058 +/- 0.21891062 (105.09%) (init = 0.5)
+    sv1_skew:      -1.38429346 +/- 1.49011721 (107.64%) (init = -2)
+    sv1_gamma:      1.56411035 +/- 0.05064854 (3.24%) (init = 2)
+    sv1_height:     2893.94016 +/- 3063.46742 (105.86%) == '0.3989423*sv1_amplitude/max(2.220446049250313e-16, sv1_sigma)'
+    sv1_fwhm:       0.75015497 +/- 0.78836500 (105.09%) == '3.6013100*sv1_sigma'
+    sv2_amplitude:  733.886255 +/- 22.5315071 (3.07%) (init = 955.1784)
+    sv2_center:     13272.4608 +/- 0.01423146 (0.00%) (init = 13272.41)
+    sv2_sigma:      0.10000059 +/- 1.78860659 (1788.60%) (init = 0.5)
+    sv2_skew:      -0.71529178 +/- 10.7784118 (1506.86%) (init = -2)
+    sv2_gamma:      2.09443167 +/- 0.14815335 (7.07%) (init = 2)
+    sv2_height:     2927.76534 +/- 52308.4144 (1786.63%) == '0.3989423*sv2_amplitude/max(2.220446049250313e-16, sv2_sigma)'
+    sv2_fwhm:       0.36013314 +/- 6.44132678 (1788.60%) == '3.6013100*sv2_sigma'
+[[Correlations]] (unreported correlations are < 0.250)
+    C(sv2_sigma, sv2_skew)          =  1.000
+    C(sv1_sigma, sv1_skew)          = -0.999
+    C(sv0_sigma, sv0_skew)          = -0.995
+    C(sv2_sigma, sv2_gamma)         =  0.886
+    C(sv2_skew, sv2_gamma)          =  0.885
+    C(sv0_sigma, sv0_gamma)         = -0.875
+    C(sv1_sigma, sv1_gamma)         = -0.864
+    C(sv0_skew, sv0_gamma)          =  0.860
+    C(sv1_skew, sv1_gamma)          =  0.857
+    C(sv2_amplitude, sv2_gamma)     =  0.820
+    C(sv0_amplitude, sv0_gamma)     =  0.770
+    C(sv1_amplitude, sv1_gamma)     =  0.764
+    C(l0_intercept, sv2_amplitude)  = -0.674
+    C(sv2_amplitude, sv2_sigma)     =  0.640
+    C(sv2_amplitude, sv2_skew)      =  0.640
+    C(l0_intercept, sv0_amplitude)  = -0.635
+    C(l0_intercept, sv2_gamma)      = -0.616
+    C(sv0_amplitude, sv0_sigma)     = -0.602
+    C(sv0_amplitude, sv0_skew)      =  0.597
+    C(sv1_amplitude, sv1_sigma)     = -0.578
+    C(sv1_amplitude, sv1_skew)      =  0.577
+    C(sv1_center, sv1_skew)         = -0.574
+    C(sv1_center, sv1_sigma)        =  0.561
+    C(sv0_center, sv0_skew)         = -0.518
+    C(sv0_center, sv0_sigma)        =  0.485
+    C(l0_intercept, sv2_sigma)      = -0.466
+    C(l0_intercept, sv2_skew)       = -0.465
+    C(l0_intercept, sv1_amplitude)  = -0.433
+    C(sv2_center, sv2_skew)         = -0.428
+    C(sv2_center, sv2_sigma)        = -0.426
+    C(l0_intercept, sv0_gamma)      = -0.407
+    C(sv0_amplitude, sv2_amplitude) =  0.373
+    C(sv0_amplitude, sv2_gamma)     =  0.352
+    C(l0_intercept, sv1_gamma)      = -0.345
+    C(sv1_center, sv1_gamma)        = -0.281
+    C(sv0_amplitude, sv2_sigma)     =  0.269
+    C(sv0_amplitude, sv2_skew)      =  0.269
+    C(l0_intercept, sv0_skew)       = -0.259
+    C(l0_intercept, sv0_sigma)      =  0.255

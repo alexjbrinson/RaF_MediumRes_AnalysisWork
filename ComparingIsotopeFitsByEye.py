@@ -150,8 +150,10 @@ def makePlot4(datFrame, mass, s, r, n, fitRes, polyOrdersList, peaksList):
 if __name__ == '__main__':
   pd.options.mode.chained_assignment = None  # default='warn' (Pandas keep harassing me and I'm doing nothing wrong!)
   
+  svFit = False
   massList=np.array([245]) #np.array([242,243,244,245, 247])
-  rewrite=True; ltrim=13256.5; rtrim=13287; smoothingWidth=0; pOrder=16; polyOrdersList=[5,7,10,16,20]
+  rewrite=True; ltrim=13256.5; rtrim=13287; smoothingWidth=5; pOrder=16; #polyOrdersList=[5,7,10,16,20]
+  polyOrdersList = np.arange(5,21)
   sameSigma=False; sameSkew=False; sameGamma=False
   sigmaEst=.5; gammaEst=2; skew0=-2.6; skewList=[-2.5,-2,-2,-2]
   resolutionList= [.03] #[.03,.05,.07,.1,.2,.3] #  struggling a bit with low count statistics for ^{224,225}RaF
@@ -183,62 +185,80 @@ if __name__ == '__main__':
     for r in resolutionList:
       print("m=%d, scans:%s, peaksList:%s"%(m,str(s),str(peaksList)))
       scanFrame = lmd.mergeDatRaw(m, s)
+      print("raw data merged")
       datFrame=lmd.smoother(lmd.makeUseable(scanFrame, resolution=r,cropSparseEnds=True, noNaNsense=True, ltrim=ltrim, rtrim=rtrim, verbose=False), smoothWidth=smoothingWidth)#, normalizedOn="Integral"
-      (fitRes, warningStatus, numPeaksUsed) = fcuk.fitNPeaks(datFrame, peaksList, peakSigmas=sigmaEst, initGamma=gammaEst, useWeights=True, sameSkew=sameSkew, skewList=skewList,skew0=skew0, sameSigma=sameSigma, sameGamma=sameGamma,linearTerm=False,method=fitMethod)#add other opts?
-      if warningStatus == -1:
-        print("That's it for this scan, boys. Don't. push. these peaks. They're. close. to. the. eeeedge. (One of the peaks is leaking out of the scan window at rebin setting%d)"%r)
-      #fitReportFile = open(resolutionPath+'randSamp%d_FitReport.txt'%k,'w+')
-      #fitReportFile.write("Fit Report for: Mass = %d, Scan = %s, Resolution = %.3f, randSamp#%d\n"%(mass,scan,r,k)); fitReportFile.write(fitRes.fit_report(min_correl=0.25)); fitReportFile.close()
-      #compiledFitResults[r,k] = fitRes.best_values
-      #compiledResults.loc[(r,k),"fitResults"] = [fitRes.best_values]
-      print("Just ran fitScanX routine for: scan %s; res = %.3f; N=%d, and found redchi = %f"%(s,r,numPeaksUsed,fitRes.redchi))
-      fitCenterEsts = np.full((N,2),np.nan); fitLocalMaxEsts = np.full((N,2),np.nan);
-      datLocalMaxEsts = np.full((N,2),np.nan); polyFitMaxEsts = np.full((N,2),np.nan);
-      parmCenterNames = ['sv'+str(j)+'_center' for j in range(N)].append(['l0_slope', 'l0_intercept'])
-      kwargs = {'p_names':parmCenterNames}
-      #print("fitRes.errorbars", fitRes.errorbars)
-      xDat = np.array(datFrame.loc[:,'wavenumber_mean']); xFull = np.arange(np.min(xDat)-.05,np.max(xDat)+.05,.001)
-      comps = fitRes.eval_components(x=xFull)
       redχsqMatrix=-1*np.ones((N,len(polyOrdersList)))
       polyMaxWeightMatrix=-1*np.ones((N,len(polyOrdersList)))
       polyMaxUnWeightMatrix=-1*np.ones((N,len(polyOrdersList)))
       polyCompsDat=[]
-      for p in range(N):
-        if p in range(numPeaksUsed):
-          mu_p = fitRes.best_values['sv'+str(p)+'_center'];
-          sigma_p = fitRes.best_values['sv'+str(p)+'_sigma']; gamma_p = fitRes.best_values['sv'+str(p)+'_gamma'];
-          mu_pUncert = fitRes.params['sv'+str(p)+'_center'].stderr if fitRes.errorbars else max(sigma_p, gamma_p)
-          sigma_p = fitRes.best_values['sv'+str(p)+'_sigma'];
-          gamma_p = fitRes.best_values['sv'+str(p)+'_gamma'];
-          skew_p = fitRes.best_values['sv'+str(p)+'_skew'];
-          xSimp = np.arange(mu_p-(sigma_p+gamma_p),mu_p+(sigma_p+gamma_p),.01); ySimp=fcuk.skewedVoigt(xSimp,1,mu_p,sigma_p,gamma_p,skew_p)
-          fitLocMax_p = xSimp[np.argmax(ySimp)]; #WTF? Is my skewedVoigt function not good enough for you, bitch!? (p.s. it looks like no, it's not...)
-          fitLocMax_p=xFull[np.argmax(comps['sv'+str(p)+'_'])];
-          datLocalEst_p = fcuk.findLocalMax(datFrame, fitLocMax_p, 0.5, uncertIndex=3)
-          for j in range(len(polyOrdersList)):
-            datPolyEst_p = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [fitLocMax_p-1.5,fitLocMax_p+.75], polyOrder=polyOrdersList[j])
-            #fitCenterEsts[p, 0] = mu_p; fitCenterEsts[p,1] = mu_pUncert
-            #fitLocalMaxEsts[p,0] = fitLocMax_p; fitLocalMaxEsts[p,1] = mu_pUncert
-            #datLocalMaxEsts[p,0] = datLocalEst_p[0,0] ; datLocalMaxEsts[p,1] = datLocalEst_p[0,1]
-            #polyFitMaxEsts[p,0] = datPolyEst_p[0][0,0] ; polyFitMaxEsts[p,1] = datPolyEst_p[0][0,1]
-            polyCompsDat.append(datPolyEst_p[1])
-            redχsqMatrix[p,j]=datPolyEst_p[2]
-            polyMaxWeightMatrix[p,j]=datPolyEst_p[0][0,0]
-            datPolyEst_p2 = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [fitLocMax_p-1.5,fitLocMax_p+.75], polyOrder=polyOrdersList[j], weights=False)
-            polyMaxUnWeightMatrix[p,j]=datPolyEst_p2[0][0,0]
-            #print("mass %d, peak %d, polyOrder %d, reduced Chi squared = "%(m,p,polyOrdersList[j]),datPolyEst_p[2])
-        else:
-          datLocalEst_p = fcuk.findLocalMax(datFrame, peaksList[p], 0.75, uncertIndex=3)
-          for j in range(len(polyOrdersList)):
-            datPolyEst_p = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j], verbose=False)
-            #datLocalMaxEsts[p,0] = datLocalEst_p[0,0] ; datLocalMaxEsts[p,1] = datLocalEst_p[0,1]
-            #polyFitMaxEsts[p,0] = datPolyEst_p[0][0,0] ; polyFitMaxEsts[p,1] = datPolyEst_p[0][0,1]
-            polyCompsDat.append(datPolyEst_p[1])
-            redχsqMatrix[p,j]=datPolyEst_p[2]
-            polyMaxWeightMatrix[p,j]=datPolyEst_p[0][0,0]
-            datPolyEst_p2 = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j], weights=False)
-            polyMaxUnWeightMatrix[p,j]=datPolyEst_p2[0][0,0]
-            #print("mass %d, peak %d, polyOrder %d, reduced Chi squared = "%(m,p,polyOrdersList[j]),datPolyEst_p[2])
+
+      if svFit:
+        (fitRes, warningStatus, numPeaksUsed) = fcuk.fitNPeaks(datFrame, peaksList, peakSigmas=sigmaEst, initGamma=gammaEst, useWeights=True, sameSkew=sameSkew, skewList=skewList,skew0=skew0, sameSigma=sameSigma, sameGamma=sameGamma,linearTerm=False,method=fitMethod)#add other opts?
+        if warningStatus == -1:
+          print("That's it for this scan, boys. Don't. push. these peaks. They're. close. to. the. eeeedge. (One of the peaks is leaking out of the scan window at rebin setting%d)"%r)
+        #fitReportFile = open(resolutionPath+'randSamp%d_FitReport.txt'%k,'w+')
+        #fitReportFile.write("Fit Report for: Mass = %d, Scan = %s, Resolution = %.3f, randSamp#%d\n"%(mass,scan,r,k)); fitReportFile.write(fitRes.fit_report(min_correl=0.25)); fitReportFile.close()
+        #compiledFitResults[r,k] = fitRes.best_values
+        #compiledResults.loc[(r,k),"fitResults"] = [fitRes.best_values]
+        print("Just ran fitScanX routine for: scan %s; res = %.3f; N=%d, and found redchi = %f"%(s,r,numPeaksUsed,fitRes.redchi))
+        fitCenterEsts = np.full((N,2),np.nan); fitLocalMaxEsts = np.full((N,2),np.nan);
+        datLocalMaxEsts = np.full((N,2),np.nan); polyFitMaxEsts = np.full((N,2),np.nan);
+        parmCenterNames = ['sv'+str(j)+'_center' for j in range(N)].append(['l0_slope', 'l0_intercept'])
+        kwargs = {'p_names':parmCenterNames}
+        #print("fitRes.errorbars", fitRes.errorbars)
+        xDat = np.array(datFrame.loc[:,'wavenumber_mean']); xFull = np.arange(np.min(xDat)-.05,np.max(xDat)+.05,.001)
+        comps = fitRes.eval_components(x=xFull)
+      
+        for p in range(N):
+          if p in range(numPeaksUsed):
+            mu_p = fitRes.best_values['sv'+str(p)+'_center'];
+            sigma_p = fitRes.best_values['sv'+str(p)+'_sigma']; gamma_p = fitRes.best_values['sv'+str(p)+'_gamma'];
+            mu_pUncert = fitRes.params['sv'+str(p)+'_center'].stderr if fitRes.errorbars else max(sigma_p, gamma_p)
+            sigma_p = fitRes.best_values['sv'+str(p)+'_sigma'];
+            gamma_p = fitRes.best_values['sv'+str(p)+'_gamma'];
+            skew_p = fitRes.best_values['sv'+str(p)+'_skew'];
+            xSimp = np.arange(mu_p-(sigma_p+gamma_p),mu_p+(sigma_p+gamma_p),.01); ySimp=fcuk.skewedVoigt(xSimp,1,mu_p,sigma_p,gamma_p,skew_p)
+            fitLocMax_p = xSimp[np.argmax(ySimp)]; #WTF? Is my skewedVoigt function not good enough for you, bitch!? (p.s. it looks like no, it's not...)
+            fitLocMax_p=xFull[np.argmax(comps['sv'+str(p)+'_'])];
+            datLocalEst_p = fcuk.findLocalMax(datFrame, fitLocMax_p, 0.5, uncertIndex=3)
+            for j in range(len(polyOrdersList)):
+              datPolyEst_p = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j])
+              #fitCenterEsts[p, 0] = mu_p; fitCenterEsts[p,1] = mu_pUncert
+              #fitLocalMaxEsts[p,0] = fitLocMax_p; fitLocalMaxEsts[p,1] = mu_pUncert
+              #datLocalMaxEsts[p,0] = datLocalEst_p[0,0] ; datLocalMaxEsts[p,1] = datLocalEst_p[0,1]
+              #polyFitMaxEsts[p,0] = datPolyEst_p[0][0,0] ; polyFitMaxEsts[p,1] = datPolyEst_p[0][0,1]
+              polyCompsDat.append(datPolyEst_p[1])
+              redχsqMatrix[p,j]=datPolyEst_p[2]
+              polyMaxWeightMatrix[p,j]=datPolyEst_p[0][0,0]
+              datPolyEst_p2 = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j], weights=False)
+              polyMaxUnWeightMatrix[p,j]=datPolyEst_p2[0][0,0]
+              #print("mass %d, peak %d, polyOrder %d, reduced Chi squared = "%(m,p,polyOrdersList[j]),datPolyEst_p[2])
+          else:
+            datLocalEst_p = fcuk.findLocalMax(datFrame, peaksList[p], 0.75, uncertIndex=3)
+            for j in range(len(polyOrdersList)):
+              datPolyEst_p = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j], verbose=False)
+              #datLocalMaxEsts[p,0] = datLocalEst_p[0,0] ; datLocalMaxEsts[p,1] = datLocalEst_p[0,1]
+              #polyFitMaxEsts[p,0] = datPolyEst_p[0][0,0] ; polyFitMaxEsts[p,1] = datPolyEst_p[0][0,1]
+              polyCompsDat.append(datPolyEst_p[1])
+              redχsqMatrix[p,j]=datPolyEst_p[2]
+              polyMaxWeightMatrix[p,j]=datPolyEst_p[0][0,0]
+              datPolyEst_p2 = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j], weights=False)
+              polyMaxUnWeightMatrix[p,j]=datPolyEst_p2[0][0,0]
+              #print("mass %d, peak %d, polyOrder %d, reduced Chi squared = "%(m,p,polyOrdersList[j]),datPolyEst_p[2])
+      else:
+        print("ah ha ha ha... we here now.")
+        for p in range(N):
+            datLocalEst_p = fcuk.findLocalMax(datFrame, peaksList[p], 0.75, uncertIndex=3)
+            for j in range(len(polyOrdersList)):
+              datPolyEst_p = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j], verbose=False)
+              #datLocalMaxEsts[p,0] = datLocalEst_p[0,0] ; datLocalMaxEsts[p,1] = datLocalEst_p[0,1]
+              #polyFitMaxEsts[p,0] = datPolyEst_p[0][0,0] ; polyFitMaxEsts[p,1] = datPolyEst_p[0][0,1]
+              polyCompsDat.append(datPolyEst_p[1])
+              redχsqMatrix[p,j]=datPolyEst_p[2]
+              polyMaxWeightMatrix[p,j]=datPolyEst_p[0][0,0]
+              datPolyEst_p2 = fcuk.findPolyMax(datFrame, [peaksList[p]-4,peaksList[p]+1], [datLocalEst_p[0,0]-1.5,datLocalEst_p[0,0]+.75], polyOrder=polyOrdersList[j], weights=False)
+              polyMaxUnWeightMatrix[p,j]=datPolyEst_p2[0][0,0]
+              #print("mass %d, peak %d, polyOrder %d, reduced Chi squared = "%(m,p,polyOrdersList[j]),datPolyEst_p[2])
 
       redχsqFrame=pd.DataFrame(data=redχsqMatrix,index=["0->0","1->1","2->2","3->3"], columns=polyOrdersList)
       polyMaxWeightFrame=pd.DataFrame(data=polyMaxWeightMatrix,index=["0->0","1->1","2->2","3->3"], columns=polyOrdersList)
@@ -252,12 +272,40 @@ if __name__ == '__main__':
       #makePlot1(datFrame, m, s, r, numPeaksUsed, fitRes, colorDict1[m], colorDict2[m], redchi=fitRes.redchi)
       #plt.figure(2)
       #makePlot2(datFrame, m, s, r, numPeaksUsed, polyCompsDat, colorDict1[m], colorDict2[m])
-      if m == 245:
+      if svFit:
         #plt.figure(1)
         #makePlot3(datFrame, m, s, r, N, fitRes, polyOrdersList, peaksList)
-        plt.figure(1)
+        plt.figure(3)
         makePlot4(datFrame, m, s, r, N, fitRes, polyOrdersList, peaksList)
-  plt.figure(1)
-  plt.legend()
+        plt.legend()
+
+      plt.figure(1)
+      for p in range(N):
+        plt.plot(polyOrdersList, redχsqMatrix[p,:], 'o', label="peak "+str(p))
+      plt.xlabel("polynomial order"); plt.ylabel(r'$\chi^2$')
+      plt.title(r"$^{%d}$Ra$^{19}$F Reduced chi squared vs polynomial order"%(m-19))
+      plt.legend()
+
+      plt.figure(2)
+      for p in range(N):
+        plt.plot(polyOrdersList, np.abs(polyMaxWeightMatrix[p,:]-polyMaxUnWeightMatrix[p,:]), 'o', label="peak "+str(p))
+      plt.xlabel("polynomial order"); plt.ylabel(r'$|\nu_w-\nu_u|$(cm$^{-1}$)')
+      plt.title(r"$^{%d}$Ra$^{19}$F (Weighted - Unweighted) Local Max Estimates vs polynomial order"%(m-19))
+      plt.legend()
+
+      plt.figure(3)
+      ax1=plt.subplot(4,1,1); color = next(ax1._get_lines.prop_cycler)['color']
+      plt.title(r"$^{%d}$Ra$^{19}$F Local Max Estimates vs Polynomial Order"%(m-19))
+      ax1.plot(polyOrdersList, polyMaxWeightMatrix[0,:],'o',color=color, label="peak 0, weighted")
+      ax1.plot(polyOrdersList, polyMaxUnWeightMatrix[0,:],'^',color=color, label="peak 0, unweighted")
+      ax1.set_ylabel('peak 0 max'); ax1.legend()
+      for p in range(1,N):
+        ax = plt.subplot(4,1,p+1, sharex=ax1)
+        color = next(ax1._get_lines.prop_cycler)['color']
+        ax.plot(polyOrdersList, polyMaxWeightMatrix[p,:],'o',color=color)
+        ax.plot(polyOrdersList, polyMaxUnWeightMatrix[p,:],'^',color=color)
+        ax.set_ylabel('peak '+str(p)+' max')
+      plt.xlabel("polynomial order"); 
+      
   plt.show()
 
